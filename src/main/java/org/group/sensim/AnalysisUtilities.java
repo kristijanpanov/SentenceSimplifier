@@ -133,8 +133,8 @@ public class AnalysisUtilities {
 
 		if(firstWordTree == null)	return;
 		Tree preterm = firstWordTree.parent(inputTree);
-		String firstWord = firstWordTree.yield().toString();
-		if(!preterm.label().toString().matches("^NNP.*") && !firstWord.equals("I")){	
+		String firstWord = firstWordTree.yieldWords().stream().map(Word::toString).collect(Collectors.joining(" "));
+		if(!preterm.label().toString().matches("^NNP.*") && !firstWord.equals("I")){
 		//if(firstWord.indexOf('-') == -1 && !firstWord.equals("I")){
 			firstWord = firstWord.substring(0,1).toLowerCase() + firstWord.substring(1);
 			firstWordTree.label().setValue(firstWord);
@@ -385,8 +385,8 @@ public class AnalysisUtilities {
 	public void normalizeTree(Tree inputTree){
 		inputTree.label().setFromString("ROOT");
 
-		List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
-		List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+		List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<>();
+		List<TsurgeonPattern> ps = new ArrayList<>();
 		String tregexOpStr;
 		TregexPattern matchPattern;
 		TsurgeonPattern p;

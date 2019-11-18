@@ -110,6 +110,7 @@ public class Question implements Comparable<Question>, Serializable{
 		if(sourceTree != null) res.setSourceTree(sourceTree.deepCopy());
 		if(intermediateTree != null) res.setIntermediateTree(intermediateTree.deepCopy());
 
+
 		res.setSourceArticleName(this.sourceArticleName);
 		res.setSourceDocument(this.sourceDocument);
 
@@ -295,7 +296,7 @@ public class Question implements Comparable<Question>, Serializable{
 
 	
 	public List<Tree> findLogicalWordsAboveIntermediateTree(){
-		List<Tree> res = new ArrayList<Tree>();
+		List<Tree> res = new ArrayList<>();
 		
 		Tree pred = intermediateTree.getChild(0).headPreTerminal(AnalysisUtilities.getInstance().getHeadFinder());
 		String lemma = AnalysisUtilities.getInstance().getLemma(pred.yield().toString(), pred.label().toString());
