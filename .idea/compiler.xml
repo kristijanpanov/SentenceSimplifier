@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="SentenceSimplifier" />
+        <module name="SentenceSimplifier_git" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="11" />

@@ -31,6 +31,7 @@ import edu.stanford.nlp.trees.tregex.TregexPattern;
 import edu.stanford.nlp.trees.tregex.tsurgeon.Tsurgeon;
 import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
 import edu.stanford.nlp.util.Pair;
+import org.apache.log4j.BasicConfigurator;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -132,7 +133,7 @@ public class SentenceSimplifier {
         TregexMatcher matcher;
 
         //TODO find better solution for checking if matcher has found something... without repeating code
-        //TODO actually the whole thing from "tregex" to has found something can be extracted in a method somewhere...
+        //TODO actually the whole thing from "tregex" till has found something can be extracted in a method somewhere...
 
         //conjoined VPs, clauses, etc.
         tregexOpStr = "CONJP|CC !< either|or|neither|nor > S|SBAR|VP"
@@ -1368,6 +1369,7 @@ public class SentenceSimplifier {
      */
     public static void main(String[] args) {
         SentenceSimplifier ss = new SentenceSimplifier();
+        BasicConfigurator.configure();
         boolean doMobyDickParse = false;
         boolean treeInput = false;
         boolean verbose = false;
