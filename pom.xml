@@ -69,19 +69,38 @@
             <version>RELEASE</version>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
-            <groupId>org.apache.jena</groupId>
-            <artifactId>jena-arq</artifactId>
-            <version>3.8.0</version>
+            <groupId>com.github.renespeck</groupId>
+            <artifactId>fox-java</artifactId>
+            <version>e67a2bd475</version>
         </dependency>
 
+            <dependency>
+                <groupId>com.github.renespeck</groupId>
+                <artifactId>fox-java</artifactId>
+                <version>e67a2bd475</version>
+            </dependency>
 
-
-
+        <dependency>
+            <groupId>org.aksw</groupId>
+            <artifactId>gerbil.nif.transfer</artifactId>
+            <version>1.2.6-jena3.1-SNAPSHOT</version>
+        </dependency>
 
     </dependencies>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+
+        <repository>
+            <id>local repository</id>
+            <url>file://${project.basedir}/repository</url>
+        </repository>
+
+    </repositories>
 
 
 </project>

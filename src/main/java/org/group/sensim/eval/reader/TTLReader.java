@@ -8,9 +8,10 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.log4j.BasicConfigurator;
 
-/*
-Reads nif .ttl files from the dataset. Used to evaluate the Heilman and Smith's algorithm against
-entities extraction with FOX.
+/**
+ * Reads nif .ttl files from the dataset. Uses JENA!
+ *
+ * Needed to evaluate the Heilman and Smith's algorithm against entities extraction with FOX.
  */
 public class TTLReader {
     private static final Log log = LogFactory.getLog(TTLReader.class);
@@ -39,6 +40,9 @@ public class TTLReader {
         log.debug("... finished.");
     }
 
+    /**
+     *
+     */
     private static void extractIsString(Triple triple, String url) {
 
         if (url.endsWith("#isString")) {
