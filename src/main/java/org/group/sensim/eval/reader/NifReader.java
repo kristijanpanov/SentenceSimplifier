@@ -13,34 +13,48 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 
 public class NifReader {
 
     private static final Log log = LogFactory.getLog(TTLReader.class);
-    private final TurtleNIFParser turtleNIFParser = new TurtleNIFParser();
-
+    private TurtleNIFParser turtleNIFParser;
+    //create getter if needed
+    private final List<Document> nifDocs;
 
     public NifReader() {
-        //todo add TurtleNifParser here and use it with instance of NifReader
+        turtleNIFParser = new TurtleNIFParser();
+        nifDocs = new ArrayList<>();
     }
 
     public static void main(String[] args) {
-
-        String testFile = "ReutersTest.ttl";
-        readData(testFile);
+        NifReader nf = new NifReader();
+        String testFile = "./src/main/resources/ReutersTest.ttl";
+        nf.readData(testFile);
+        nf.printDocuments();
         //TODO readDataWithListOfFiles should be possible
     }
 
-    /*
-    Reads ttl file and prints some nif values.
+    /**
+     * Reads nif/ttl files and saves the Documents in a List.
+     *
+     * @param files - Array of paths of files to be read, starting from project root-folder.
      */
-    private static void readData(String file) {
+    private void readData(String[] files){
+        for (String file : files){
+            readData(file);
+        }
+    }
+
+    /**
+     * Reads nif/ttl file and saves the Documents in a List.
+     *
+     * @param file - The path of a file to be read, starting from project root-folder.
+     */
+    private void readData(String file) {
         log.info(" -----> read input ttl-file...");
-        final TurtleNIFParser turtleNIFParser = new TurtleNIFParser();
-        File testFile = new File(new File("./src/main/resources/ReutersTest.ttl").getAbsolutePath());
-        final List<Document> nifdocs = new ArrayList<>();
+        turtleNIFParser = new TurtleNIFParser();
+        File testFile = new File(new File(file).getAbsolutePath());
 
         List<String> lines = null;
         try {
@@ -50,41 +64,42 @@ public class NifReader {
             log.error(testFile.toPath());
         }
 
-        log.info("Reuters test file with " + lines.size() + " lines.");
-        nifdocs.addAll(turtleNIFParser.parseNIF(String.join(" ", lines)));
-
+        assert lines != null;
+        log.info(file + " has [" + lines.size() + "] lines.");
+        nifDocs.addAll(turtleNIFParser.parseNIF(String.join(" ", lines)));
         log.info("<----- ...read input ttl-file");
-        log.info(nifdocs.size() + " Documents has been created.");
+        log.info(nifDocs.size() + " Documents has been parsed.");
 
-        log.info("Iterating through the first document:");
-        for (Document doc : nifdocs) {
-            System.out.println("Doc. URI: " + doc.getDocumentURI());
-            System.out.println("Text:\n" + doc.getText());
-            System.out.println("Markings (" + doc.getMarkings().size() + "):\n" + doc.getMarkings());
-            System.out.println("Translation:");
+    }
 
-            log.info(doc.getMarkings().size() + " Entities has been found in the document with URI: " + doc.getDocumentURI());
-            System.out.println("Info: (startIndex, length, pointingResource)");
+    /**
+     * Prints all saved documents to the console with additional information like: size, entities and the text.
+     */
+    private void printDocuments() {
+
+        if(nifDocs.size() == 0){
+            log.info("There are no documents to be printed.");
+            return;
+        }
+        log.info("----------> iterating through documents:");
+        for (Document doc : nifDocs) {
+            log.info("Text:\n" + doc.getText());
+            log.info(doc.getMarkings().size() + " Entities has been found in document with URI: " + doc.getDocumentURI());
+            //log.info("Info: (startIndex, length, pointingResource)");
 
             int entityCounter = 0;
             for (Marking marking : doc.getMarkings()) {
-
-
                 if (!(marking instanceof NamedEntity)) {
                     continue;
                 }
-
                 final NamedEntity ne = (NamedEntity) marking;
-                entityCounter++;
-                System.out.println(entityCounter + ". " + ne);
-
-//                final Set<String> uris = ne.getUris();
+//              final Set<String> uris = ne.getUris();
                 final String word = doc.getText().substring(ne.getStartPosition(), ne.getStartPosition() + ne.getLength());
-                System.out.println("NER (string): [" + word + "]");
+                entityCounter++;
 
+                log.info(String.format("%d . %-73s| NER: [%s]}", entityCounter, ne, word));
             }
-
-            break;
         }
+        log.info("<---------- iterating through documents");
     }
 }
