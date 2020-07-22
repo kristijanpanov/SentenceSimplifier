@@ -63,10 +63,24 @@ public class SentenceSimplifier {
 
     private TreeFactory factory;
     private Set<String> verbsThatImplyComplements = null; //not yet fully implemented, can be ignored
+    static SentenceSimplifier instance;
 
 
     private SentenceSimplifier() {
         factory = new LabeledScoredTreeFactory();
+        BasicConfigurator.configure();
+        String propertiesFile = "src" + File.separator + "main" + File.separator + "resources" + File.separator + "factual-statement-extractor.properties";
+        GlobalProperties.loadProperties(propertiesFile);
+
+        //load the models on the beginning, avoid later waiting for the load time.
+        AnalysisUtilities.getInstance();
+    }
+
+    public static SentenceSimplifier getInstance() {
+        if(instance == null){
+            instance = new SentenceSimplifier();
+        }
+        return instance;
     }
 
     private List<Question> simplifyHelper(Question input) {
@@ -1467,9 +1481,7 @@ public class SentenceSimplifier {
                 }
 
                 long startTime = System.currentTimeMillis();
-
                 List<String> sentences = AnalysisUtilities.getSentences(doc.toString());
-
                 //iterate over each segmented sentence and generate questions
                 List<Question> output = new ArrayList<>();
 
@@ -1481,7 +1493,7 @@ public class SentenceSimplifier {
                     if (parsed.yield().toString().equals(".")) {
                         System.out.print(sentence);
                         if (verbose) System.out.print("\t" + sentence);
-                        System.out.println("no parse was done... orig sentence was printed. p.s. delete this print.");
+                        //System.out.println("no parse was done... orig sentence was printed. p.s. delete this print.");
                         continue;
                     }
 
@@ -1507,6 +1519,39 @@ public class SentenceSimplifier {
         }
 
     }
+
+    public void simplifyFactualComplexSentence(String doc){
+        SentenceSimplifier ss = SentenceSimplifier.getInstance();
+        long startTime = System.currentTimeMillis();
+        Tree parsed;
+        List<String> sentences = AnalysisUtilities.getSentences(doc);
+        //iterate over each segmented sentence and generate one-factual sentences
+        List<Question> output = new ArrayList<>();
+        for (String sentence : sentences) {
+            parsed = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
+            if (GlobalProperties.getDebug()) System.err.println("input: " + parsed.yield().toString());
+            if (GlobalProperties.getDebug()) System.err.println("parse: " + sentence);
+            //if no parse, print the original sentence
+            if (parsed.yield().toString().equals(".")) {
+                System.out.print(sentence);
+                continue;
+            }
+
+            output.clear();
+            output.addAll(ss.simplify(parsed));
+            for (Question q : output) {
+                System.out.print(AnalysisUtilities.getCleanedUpYield(q.getIntermediateTree()));
+
+                //System.out.println(q.findLogicalWordsAboveIntermediateTree());
+                System.out.println();
+            }
+        }
+
+        System.err.println("Seconds Elapsed:\t" + ((System.currentTimeMillis() - startTime) / 1000.0));
+    }
+
+
+
 
 }
 

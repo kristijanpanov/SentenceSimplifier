@@ -300,7 +300,6 @@ public class AnalysisUtilities {
 			return new ParseResult(true, parse, parseScore);
 			
 		} catch (Exception ex) {
-			System.out.println("cant connect to pars server....");
 			if(GlobalProperties.getDebug()) System.err.println("Could not connect to parser server.");
 			//ex.printStackTrace();
 		}

@@ -25,7 +25,7 @@ public class TTLReader {
         BasicConfigurator.configure();
         log.debug("Prepare to read .ttl file...");
 
-        Model reader = RDFDataMgr.loadModel("ReutersTest.ttl");
+        Model reader = RDFDataMgr.loadModel("eval/ReutersTest.ttl");
         StmtIterator iterP = reader.listStatements();
 
         while (iterP.hasNext()) {
