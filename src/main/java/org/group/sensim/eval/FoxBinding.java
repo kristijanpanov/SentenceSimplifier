@@ -22,6 +22,7 @@ import java.util.Map;
 public class FoxBinding {
 
     public final static Logger LOG = LogManager.getLogger(FoxBinding.class);
+
     static FoxBinding fb = new FoxBinding();
     private FoxResponse response;
 
@@ -67,17 +68,17 @@ public class FoxBinding {
      */
     public static void printFormattedResponse(FoxResponse response) {
         List<Entity> entities = response.getEntities();
-        //List<RelationSimple> relations = response.getRelations();
+        List<RelationSimple> relations = response.getRelations();
 
-        LOG.info("Iterating through entities:");
+        LOG.info("Iterating through entities: ----> [" + entities.size() + "]");
         for (Entity e : entities) {
             LOG.info("Entity: [" + e.getText() + "] - start position: " + e.getIndices() + " -  URI: " + e.getUri());
         }
 
-//        LOG.info("Iterating through relations:");
-//        for (RelationSimple rel : relations) {
-//            LOG.info(rel);
-//        }
+        LOG.info("Iterating through relations: ----> [" + relations.size() + "]");
+        for (RelationSimple rel : relations) {
+            LOG.info(rel);
+        }
     }
 
     /**

@@ -9,6 +9,9 @@ import org.apache.commons.logging.LogFactory;
 import org.group.sensim.SentenceSimplifier;
 import org.group.sensim.eval.reader.NifReader;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
@@ -16,15 +19,65 @@ import java.util.Map;
 public class EvaluationProcessing {
     private static final Log log = LogFactory.getLog(EvaluationProcessing.class);
 
-    final static int processNumberDocs = 5; //TODO delete this one in the future. Used for testing.
+    final static int processNumberDocs = 130; //TODO delete this one in the future. Used for testing.
     static int counterProcessedDocs = 0;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
         NifReader nf = new NifReader();
         String testFile = "./src/main/resources/eval/ReutersTest.ttl";
         List<Document> docs = nf.readData(testFile);
         SentenceSimplifier ss = SentenceSimplifier.getInstance();
 
+        //evaluationRefDatasetWithFox(docs, ss);
+        evaluationFoxSimplRefDataset(docs, ss);
+    }
+
+    private static void evaluationFoxSimplRefDataset(List<Document> docs, SentenceSimplifier ss) throws FileNotFoundException, UnsupportedEncodingException {
+
+        EvaluationDataManager evalManager = new EvaluationDataManager();
+        PrintWriter writer = new PrintWriter("results_Fox.txt", "UTF-8");
+
+        docs.forEach(basisDoc -> {
+            try {
+                FoxResponse basisFoxResponse = processDocumentWithFox(basisDoc);
+                //evaluateNER(basisDoc, foxResponse, evalManager);
+                String simpleSentences = ss.simplifyFactualComplexSentence(basisDoc.getText());
+                FoxResponse simplifiedFoxResponse = FoxBinding.sendRequest(simpleSentences);
+
+//                FoxBinding.printFormattedResponse(basisFoxResponse);
+//                FoxBinding.printFormattedResponse(simplifiedFoxResponse);
+
+
+                writer.println( formatResults(basisDoc.getText(), simpleSentences, basisFoxResponse, simplifiedFoxResponse ) );
+
+                counterProcessedDocs++;
+                if(processNumberDocs <= counterProcessedDocs) {
+                    writer.close();
+
+                    //evalManager.printResults();
+                    System.exit(1); //process only the first document... //TODO remove this one.
+                }
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        });
+        writer.close();
+    }
+
+    private static String formatResults(String basisText, String simplText, FoxResponse basisFoxResponse, FoxResponse simplifiedFoxResponse) {
+        String formatted = "\nBasis: " + basisText + "\nSimplf:" + simplText + "\n\n";
+
+        formatted += "Entities:\nBasis: [" + basisFoxResponse.getEntities().size() + "] --- " + basisFoxResponse.getEntities()
+                + "\nSimplf: [" + simplifiedFoxResponse.getEntities().size() + "] --- " + simplifiedFoxResponse.getEntities();
+
+        formatted += "\nRelations:\nBasis: [" + basisFoxResponse.getRelations().size() + "] --- " + basisFoxResponse.getRelations()
+                + "\nSimplf: [" + simplifiedFoxResponse.getRelations().size() + "] --- " + simplifiedFoxResponse.getRelations();
+
+        return formatted;
+    }
+
+    private static void evaluationRefDatasetWithFox(List<Document> docs, SentenceSimplifier ss) {
         EvaluationDataManager evalManager = new EvaluationDataManager();
         docs.forEach(basisDoc -> {
             try {
@@ -36,8 +89,6 @@ public class EvaluationProcessing {
                 e.printStackTrace();
             }
         });
-
-        //NifReader.printNifDocuments(docs);
     }
 
 
