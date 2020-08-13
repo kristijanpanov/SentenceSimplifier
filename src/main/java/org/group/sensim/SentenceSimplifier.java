@@ -77,7 +77,7 @@ public class SentenceSimplifier {
     }
 
     public static SentenceSimplifier getInstance() {
-        if(instance == null){
+        if (instance == null) {
             instance = new SentenceSimplifier();
         }
         return instance;
@@ -104,11 +104,11 @@ public class SentenceSimplifier {
         } else {
 
             List<Question> extracted = new ArrayList<>();
-			//if there is a conjunction of NPs within this small chunk, also extract separate sentences using each conjunct NP.
-			if (breakNPs) {
-				extractConjoinedNPs(extracted, input);
-			}
-			extractConjoinedPhrases(extracted, input);
+            //if there is a conjunction of NPs within this small chunk, also extract separate sentences using each conjunct NP.
+            if (breakNPs) {
+                extractConjoinedNPs(extracted, input);
+            }
+            extractConjoinedPhrases(extracted, input);
 
             for (Question e : extracted) {
                 //recur
@@ -1520,8 +1520,14 @@ public class SentenceSimplifier {
 
     }
 
-    public void simplifyFactualComplexSentence(String doc){
+    /**
+     * Simplifies complex sentences into more one-factual sentences and returns them back as a text.
+     *
+     * @param doc - the text to be simplified
+     */
+    public String simplifyFactualComplexSentence(String doc) {
         SentenceSimplifier ss = SentenceSimplifier.getInstance();
+        String simpleSentences = "";
         long startTime = System.currentTimeMillis();
         Tree parsed;
         List<String> sentences = AnalysisUtilities.getSentences(doc);
@@ -1540,17 +1546,18 @@ public class SentenceSimplifier {
             output.clear();
             output.addAll(ss.simplify(parsed));
             for (Question q : output) {
-                System.out.print(AnalysisUtilities.getCleanedUpYield(q.getIntermediateTree()));
-
+                String simSen = AnalysisUtilities.getCleanedUpYield(q.getIntermediateTree());
+                simpleSentences +=" " + simSen;
+                System.out.println(simSen);
                 //System.out.println(q.findLogicalWordsAboveIntermediateTree());
-                System.out.println();
             }
         }
 
-        System.err.println("Seconds Elapsed:\t" + ((System.currentTimeMillis() - startTime) / 1000.0));
+        System.out.println("Seconds Elapsed:\t" + ((System.currentTimeMillis() - startTime) / 1000.0));
+        System.out.println("Returning:\t" + simpleSentences);
+
+        return simpleSentences;
     }
-
-
 
 
 }

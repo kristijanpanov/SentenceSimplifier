@@ -23,15 +23,14 @@ public class FoxBinding {
 
     public final static Logger LOG = LogManager.getLogger(FoxBinding.class);
 
-    static FoxBinding fb = new FoxBinding();
-    private FoxResponse response;
-
-    public static void main(final String[] a) throws Exception {
-        String input = "Michael Jackson was born in the USA.";
-        FoxResponse response = fb.sendRequest(input);
-        printFormattedResponse(response);
-
-    }
+//    static FoxBinding fb = new FoxBinding();
+//
+//    public static void main(final String[] a) throws Exception {
+//        String input = "Michael Jackson was born in the USA.";
+//        FoxResponse response = fb.sendRequest(input);
+//        printFormattedResponse(response);
+//
+//    }
 
     /**
      * Connects to the server and sends request input sentence to be processed.
