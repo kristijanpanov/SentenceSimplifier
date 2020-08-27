@@ -1,19 +1,12 @@
 package org.group.sensim.possequences;
 
 import edu.stanford.nlp.trees.Tree;
-import org.aksw.fox.binding.FoxResponse;
 import org.aksw.gerbil.transfer.nif.Document;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.group.sensim.AnalysisUtilities;
-import org.group.sensim.GlobalProperties;
-import org.group.sensim.ParseResult;
 import org.group.sensim.SentenceSimplifier;
-import org.group.sensim.eval.FoxBinding;
 import org.group.sensim.eval.reader.NifReader;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -26,19 +19,31 @@ public class POSApp {
     private static POSMarker posMarker = new POSMarker();
     public final static Logger log = LogManager.getLogger(POSApp.class);
 
+    /**
+     * Used to find out POS-tags, which point to an entity.
+     * @param args
+     * @throws MalformedURLException
+     * @throws FileNotFoundException
+     * @throws UnsupportedEncodingException
+     */
     public static void main(String[] args) throws MalformedURLException, FileNotFoundException, UnsupportedEncodingException {
-
-        String sentence = "Nikola Tesla moved to North America.";
-        FoxResponse response;
-        String testFile = "./src/main/resources/eval/ReutersTest.ttl";
+        // String testFile = "./src/main/resources/eval/ReutersTest.ttl";
+        String testFile = "./src/main/resources/eval/RSS-500.ttl";
         extractPOSfromTtl(testFile);
+
+        //setence declared as irrelevant, but "Kolding" is an entity. (NN instead of NNP).
+//        String sentence = "Kolding is a transportation , commercial , and manufacturing centre , and has many industrial companies .";
+//        System.out.println(posMarker.extractPOStags(sentence));
     }
 
-    //TODO ne gi simplificiri, iskari direkt POS tags recenicite. Vidi na kakov Entity ima kakov POS-Tag.
-    // Napisi go tva u edna lista dokument.
-    //ako ti se malko primerite, najdi uste eden .ttl dokument.
-    //TODO produzi dalje.
-    //TODO napisi si points so sakas da gi razgovaras utre na termino.
+    /**
+     * Extracts POS tags from a given .ttl-file and writes the results in a text file.
+     * Used to find out the Tags pointing to an entity.
+     *
+     * @param ttlFile
+     * @throws FileNotFoundException
+     * @throws UnsupportedEncodingException
+     */
     private static void extractPOSfromTtl(String ttlFile) throws FileNotFoundException, UnsupportedEncodingException {
         NifReader nf = new NifReader();
         List<Document> docs = nf.readData(ttlFile);
@@ -60,6 +65,5 @@ public class POSApp {
         });
 
         writer.close();
-
     }
 }
