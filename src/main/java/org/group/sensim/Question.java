@@ -23,19 +23,16 @@
 
 package org.group.sensim;
 
-import edu.stanford.nlp.ling.Word;
+import java.io.Serializable;
+import java.util.*;
+
 import edu.stanford.nlp.trees.*;
 import edu.stanford.nlp.trees.tregex.*;
 
-import java.io.Serializable;
-import java.util.*;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
 /**
- * Wrapper class for representing a question and its context.  
+ * Wrapper class for representing a question and its context.
  * Used to track the current tree as well as the source tree, feature values, etc.
- * 
+ *
  * @author mheilman@cmu.edu
  *
  */
@@ -48,7 +45,7 @@ public class Question implements Comparable<Question>, Serializable{
 		this.sourceDocument = null;
 		this.sourceArticleName = "";
 	}
-	
+
 	public Question(Tree tree){
 		this.tree = tree;
 		this.setIntermediateTreeSupersenses(null);
@@ -56,7 +53,7 @@ public class Question implements Comparable<Question>, Serializable{
 		this.sourceDocument = null;
 		this.sourceArticleName = "";
 	}
-	
+
 	public Question(Map<String, Double> features){
 		this.tree = null;
 		this.setIntermediateTreeSupersenses(null);
@@ -65,7 +62,7 @@ public class Question implements Comparable<Question>, Serializable{
 		this.sourceDocument = null;
 		this.sourceArticleName = "";
 	}
-	
+
 	public Question(Tree tree, Map<String, Double> features){
 		this.tree = tree;
 		this.setIntermediateTreeSupersenses(null);
@@ -74,7 +71,7 @@ public class Question implements Comparable<Question>, Serializable{
 		this.sourceDocument = null;
 		this.sourceArticleName = "";
 	}
-	
+
 	public Question(Tree tree, Tree intermediateTree, Tree sourceTree, Map<String, Double> features){
 		this.intermediateTree = intermediateTree;
 		this.sourceTree = sourceTree;
@@ -88,14 +85,17 @@ public class Question implements Comparable<Question>, Serializable{
 
 	public String toString(){
 		String res = "";
-		
-		if(tree != null) res += (String) tree.yieldWords().stream().map(Word::toString).collect(Collectors.joining(" "));
-		res += "\t";
-		if(intermediateTree != null) res += "Intermediate:"+intermediateTree.yieldWords().stream().map(Word::toString).collect(Collectors.joining(" "));
-		res += "\t";
-		if(sourceTree != null) res += "Source:"+sourceTree.yieldWords().stream().map(Word::toString).collect(Collectors.joining(" "));
 
-		System.out.println("res of Question: " + res);
+		if(tree != null) res += tree.yield().toString();
+		res += "\t";
+		if(intermediateTree != null) res += "Intermediate:"+intermediateTree.yield().toString();
+		res += "\t";
+		if(sourceTree != null) res += "Source:"+sourceTree.yield().toString();
+
+
+		//System.out.println("res of Question: " + res);
+
+
 		return res;
 	}
 
@@ -104,20 +104,19 @@ public class Question implements Comparable<Question>, Serializable{
 		res.copyFeatures(featureMap);
 		res.setScore(score);
 		res.setSourceSentenceNumber(sourceSentenceNumber);
-		if(tree != null) res.setTree(tree.deepCopy());
+		if(tree != null) res.setTree(tree.deeperCopy());
 		res.setLabelScore(labelScore);
-		if(answerPhraseTree != null) res.setAnswerPhraseTree(answerPhraseTree.deepCopy());
-		if(sourceTree != null) res.setSourceTree(sourceTree.deepCopy());
-		if(intermediateTree != null) res.setIntermediateTree(intermediateTree.deepCopy());
-
+		if(answerPhraseTree != null) res.setAnswerPhraseTree(answerPhraseTree.deeperCopy());
+		if(sourceTree != null) res.setSourceTree(sourceTree.deeperCopy());
+		if(intermediateTree != null) res.setIntermediateTree(intermediateTree.deeperCopy());
 
 		res.setSourceArticleName(this.sourceArticleName);
 		res.setSourceDocument(this.sourceDocument);
 
 		return res;
 	}
-	
-	
+
+
 	/**
 	 * Removes features that may have been set before but do not exist now
 	 * (if the question had been saved/serialized).
@@ -133,7 +132,7 @@ public class Question implements Comparable<Question>, Serializable{
 			featureMap.remove(key);
 		}
 	}
-	
+
 	public Object getSourceDocument() {
 		return sourceDocument;
 	}
@@ -147,90 +146,90 @@ public class Question implements Comparable<Question>, Serializable{
 	public void setTree(Tree tree) {
 		this.tree = tree;
 	}
-	
+
 	public Tree getTree() {
 		return tree;
 	}
-	
+
 	public String yield(){
-		if(this.yield == null ){
+		if(yield == null ){
 			if(tree != null){
-				this.yield = AnalysisUtilities.getCleanedUpYield(tree);
+				yield = AnalysisUtilities.getCleanedUpYield(tree);
 			}else{
-				this.yield = "";
+				yield = "";
 			}
 		}
-		return this.yield;
+		return yield;
 	}
 
 	public Map<String, Double> getFeatures() {
 		return featureMap;
 	}
-	
+
 	public void setFeatureValue(String key, Double value){
 		featureMap.put(key, value);
 	}
-	
+
 	public void copyFeatures(Map<String, Double> features) {
 		this.featureMap.putAll(features);
 	}
-	
 
-	
+
+
 	public void setFeatureValues(List<Double> featureValueList) {
 		this.featureValueList = featureValueList;
 		Double value;
 		List<String> names = Question.getFeatureNames();
-		
+
 		//only populate the feature map if it looks like we are still using the same feature set
 		if(names.size() != featureValueList.size()){
 			return;
 		}
-		
+
 		for(int i=0; i<featureValueList.size();i++){
 			value = featureValueList.get(i);
 			featureMap.put(names.get(i), value);
 		}
 	}
-	
+
 	protected static List<Double> createFeatureValueList(Map<String, Double> featureNameToValueMap) {
 		List<Double> res = new ArrayList<Double>();
 		Double val;
-		
+
 		Iterator<String> iter = getFeatureNames().iterator();
 		while(iter.hasNext()){
 			val = featureNameToValueMap.get(iter.next());
 			if(val == null) val = 0.0;
 			res.add(val);
 		}
-		
+
 		return res;
 	}
-	
-	
+
+
 	/**
 	 * returns the index into the featureNames list of the given name
 	 * (mainly for testing purposes)
-	 * 
+	 *
 	 * @param featurename
 	 * @return
 	 */
 	public static int getFeatureValueIndex(String featurename){
 		return getFeatureNames().indexOf(featurename);
 	}
-	
+
 	public static List<String> getFeatureNames(){
 		if(featureNames == null){
 			featureNames = new ArrayList<String>();
-			
+
 			String defaultFeatureNames = "performedNPClarification;questionLength;sourceLength;answerPhraseLength;negation;whQuestion;whQuestionPrep;whQuestionWho;whQuestionWhat;whQuestionWhere;whQuestionWhen;whQuestionWhose;whQuestionHowMuch;whQuestionHowMany;isSubjectMovement;removedLeadConjunctions;removedAsides;removedLeadModifyingPhrases;extractedFromAppositive;extractedFromFiniteClause;extractedFromParticipial;extractedFromRelativeClause;mainVerbPast;mainVerbPresent;mainVerbFuture;mainVerbCopula;meanWordFreqSource;meanWordFreqAnswer;numNPsQuestion;numProperNounsQuestion;numQuantitiesQuestion;numAdjectivesQuestion;numAdverbsQuestion;numPPsQuestion;numSubordinateClausesQuestion;numConjunctionsQuestion;numPronounsQuestion;numNPsAnswer;numProperNounsAnswer;numQuantitiesAnswer;numAdjectivesAnswer;numAdverbsAnswer;numPPsAnswer;numSubordinateClausesAnswer;numConjunctionsAnswer;numPronounsAnswer;numVagueNPsSource;numVagueNPsQuestion;numVagueNPsAnswer;numLeadingModifiersQuestion";
 			String [] names = GlobalProperties.getProperties().getProperty("featureNames", defaultFeatureNames).split(";");
-			
+
 			boolean includeGreaterThanFeatures = new Boolean(GlobalProperties.getProperties().getProperty("includeGreaterThanFeatures", "true"));
-			
-			
+
+
 			Arrays.sort(names);
-			
+
 			for(int i=0; i<names.length; i++){
 				featureNames.add(names[i]);
 				if(includeGreaterThanFeatures && names[i].matches("num.+")){
@@ -245,28 +244,28 @@ public class Question implements Comparable<Question>, Serializable{
 			}
 
 			Collections.sort(featureNames);
-			
+
 		}
-		
-		
+
+
 		return featureNames;
 	}
-	
-	
-	
 
-	
-	
+
+
+
+
+
 	public void setFeatureValueIfFeatureExists(String key, int value){
 		setFeatureValueIfFeatureExists(key, (double)value);
 	}
-	
+
 	public void setFeatureValueIfFeatureExists(String key, Double value){
 		if(getFeatureNames().contains(key)){
 			featureMap.put(key, value);
 		}
 	}
-	
+
 	public void setSourceTree(Tree sourceTree) {
 		this.sourceTree = sourceTree;
 	}
@@ -284,7 +283,7 @@ public class Question implements Comparable<Question>, Serializable{
 		return featureValueList;
 	}
 
-	
+
 	public double getFeatureValue(String featureName){
 		Double val = featureMap.get(featureName);
 		if(val == null){
@@ -292,19 +291,19 @@ public class Question implements Comparable<Question>, Serializable{
 		}
 		return val.doubleValue();
 	}
-	
 
-	
+
+
 	public List<Tree> findLogicalWordsAboveIntermediateTree(){
-		List<Tree> res = new ArrayList<>();
-		
+		List<Tree> res = new ArrayList<Tree>();
+
 		Tree pred = intermediateTree.getChild(0).headPreTerminal(AnalysisUtilities.getInstance().getHeadFinder());
 		String lemma = AnalysisUtilities.getInstance().getLemma(pred.yield().toString(), pred.label().toString());
-		
+
 		String tregexOpStr;
 		TregexPattern matchPattern;
 		TregexMatcher matcher;
-		
+
 		Tree sourcePred = null;
 		for(Tree leaf: sourceTree.getLeaves()){
 			Tree tmp = leaf.parent(sourceTree);
@@ -314,7 +313,7 @@ public class Question implements Comparable<Question>, Serializable{
 				break;
 			}
 		}
-		
+
 		tregexOpStr = "RB|VB|VBD|VBP|VBZ|IN|MD|WRB|WDT|CC=command";
 		matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
 		matcher = matchPattern.matcher(sourceTree);
@@ -322,17 +321,17 @@ public class Question implements Comparable<Question>, Serializable{
 		Tree command;
 		while(matcher.find() && sourcePred != null){
 			command = matcher.getNode("command");
-			if(AnalysisUtilities.cCommands(sourceTree, command, sourcePred) 
+			if(AnalysisUtilities.cCommands(sourceTree, command, sourcePred)
 					&& command.parent(sourceTree) != sourcePred.parent(sourceTree))
 			{
 				res.add(command);
 			}
 		}
-		
+
 		return res;
 	}
-	
-	
+
+
 
 
 
@@ -352,7 +351,7 @@ public class Question implements Comparable<Question>, Serializable{
 	public Tree getAnswerPhraseTree() {
 		return answerPhraseTree;
 	}
-	
+
 	public int compareTo(Question o) {
 		int res = Double.compare(score, o.getScore());
 		if(res == 0){
@@ -368,7 +367,7 @@ public class Question implements Comparable<Question>, Serializable{
 	public void setFeatureValueList(List<Double> featureValueList) {
 		this.featureValueList = featureValueList;
 	}
-	
+
 	public void setIntermediateTree(Tree intermediateTree) {
 		this.setIntermediateTreeSupersenses(null);
 		this.intermediateTree = intermediateTree;
@@ -385,17 +384,17 @@ public class Question implements Comparable<Question>, Serializable{
 	public int getSourceSentenceNumber() {
 		return sourceSentenceNumber;
 	}
-	
+
 
 
 	public String getSourceArticleName() {
 		return sourceArticleName;
 	}
-	
+
 	public void setSourceArticleName(String n) {
 		sourceArticleName = n;
 	}
-	
+
 	public void setLabelScore(double labelScore) {
 		this.labelScore = labelScore;
 	}
@@ -416,7 +415,7 @@ public class Question implements Comparable<Question>, Serializable{
 	private double score; //assigned by QuestionRanker
 	private double labelScore; //gold-standard label, used only during eval
 	private List<Double> featureValueList;
-	
+
 	private String yield;
 	private static List<String> featureNames;  //list of feature names, for internal bookkeeping
 	private Tree tree; //output question parse tree
@@ -424,11 +423,11 @@ public class Question implements Comparable<Question>, Serializable{
 	private Tree intermediateTree; //an optionally transformed or simplified copy of the source tree (the output of stage 1)
 	private Tree answerPhraseTree;
 	private Map<String, Double> featureMap;
-    private int sourceSentenceNumber;
-    private List<String> intermediateTreeSupersenses;
-    
-    private Object sourceDocument; //generic pointer to a document object (generic in order to avoid unneeded dependencies)
-    private String sourceArticleName;
+	private int sourceSentenceNumber;
+	private List<String> intermediateTreeSupersenses;
+
+	private Object sourceDocument; //generic pointer to a document object (generic in order to avoid unneeded dependencies)
+	private String sourceArticleName;
 
 	private static final long serialVersionUID = -1033671431880363286L;
 

@@ -1,7 +1,5 @@
 package org.group.sensim.eval;
 
-import edu.stanford.nlp.parser.metrics.Eval;
-
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;

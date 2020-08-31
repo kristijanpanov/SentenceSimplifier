@@ -39,9 +39,9 @@ public class SentenceSelector {
         for (String sentence : sentences){
             if( selector.isSentenceRelevant(sentence) ) {
                 FoxResponse response = FoxBinding.sendRequest(sentence);
-                if(response.getEntities().size() > 0 ) {
+                //if(response.getEntities().size() > 0 ) {
                     printToFile(writer, response.toString());
-                }
+                //}
             }
         }
         writer.close();

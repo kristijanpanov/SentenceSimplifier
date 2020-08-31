@@ -43,16 +43,25 @@
             <version>4.13-beta-3</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>net.sf.jwordnet</groupId>
             <artifactId>jwnl</artifactId>
             <version>1.4_rc3</version>
         </dependency>
-        <dependency>
+       <!-- <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-parser</artifactId>
             <version>3.9.2</version>
+        </dependency> -->
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-parser</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/stanford-parser-2008-10-26.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -75,18 +84,11 @@
             <version>e67a2bd475</version>
         </dependency>
 
-            <dependency>
-                <groupId>com.github.renespeck</groupId>
-                <artifactId>fox-java</artifactId>
-                <version>e67a2bd475</version>
-            </dependency>
-
         <dependency>
             <groupId>org.aksw</groupId>
             <artifactId>gerbil.nif.transfer</artifactId>
             <version>1.2.6-jena3.1-SNAPSHOT</version>
         </dependency>
-
     </dependencies>
 
     <repositories>

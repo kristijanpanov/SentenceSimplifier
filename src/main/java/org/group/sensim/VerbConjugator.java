@@ -22,6 +22,28 @@
 //	  http://www.cs.cmu.edu/~mheilman
 
 package org.group.sensim;
+// Question Generation via Overgenerating Transformations and Ranking
+// Copyright (c) 2010 Carnegie Mellon University.  All Rights Reserved.
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+//
+// For more information, bug reports, fixes, contact:
+//    Michael Heilman
+//	  Carnegie Mellon University
+//	  mheilman@cmu.edu
+//	  http://www.cs.cmu.edu/~mheilman
 
 import java.util.*;
 import java.util.regex.*;
@@ -33,17 +55,17 @@ import net.didion.jwnl.dictionary.Dictionary;
 public class VerbConjugator {
 
 
-	
+
 	public VerbConjugator(){
 		baseFormCountMap = new HashMap<String, Long>();
 		conjugationMap = new HashMap<String, String>();
 		try{
-			JWNL.initialize(new FileInputStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "file_properties.xml"));
+			JWNL.initialize(new FileInputStream("src" + File.separator + "main" + File.separator + "resources" + File.separator +  "file_properties.xml"));
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void save(String filePath){
 		try{
 			PrintWriter pw = new PrintWriter(new FileOutputStream(filePath));
@@ -51,13 +73,13 @@ public class VerbConjugator {
 			while(iter.hasNext()){
 				Map.Entry<String, String> entry = iter.next();
 				String key = entry.getKey();
-				String[] parts = key.split("/"); 
+				String[] parts = key.split("/");
 				String token = entry.getValue();
 				pw.println(parts[0]+"\t"+parts[1]+"\t"+token);
 			}
-			
+
 			pw.println("*");
-			
+
 			Iterator<Map.Entry<String,Long> > iter2 = baseFormCountMap.entrySet().iterator();
 			while(iter2.hasNext()){
 				Map.Entry<String, Long> entry = iter2.next();
@@ -65,15 +87,15 @@ public class VerbConjugator {
 				Long count = entry.getValue();
 				pw.println(key+"\t"+count);
 			}
-			
+
 			pw.flush();
 			pw.close();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
-	
-	
+
+
 	public void load(String filePath){
 		try{
 			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filePath)));
@@ -106,7 +128,7 @@ public class VerbConjugator {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public String getSurfaceForm(String lemma, String pos){
 		String result = new String(lemma);
 		String key = lemma + "/" + pos;
@@ -129,20 +151,20 @@ public class VerbConjugator {
 				result += "s";
 			}
 		}
-		
+
 		return result;
 	}
-	
-	
+
+
 	public int getBaseFormCount(String lemma){
 		Long result = baseFormCountMap.get(lemma);
 		if(result == null){
 			result = new Long(0);
 		}
-		
+
 		return result.intValue();
 	}
-	
+
 	public void readFromTreebankFile(String path){
 		try{
 			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
@@ -171,21 +193,21 @@ public class VerbConjugator {
 						}catch(Exception e){
 							e.printStackTrace();
 						}
-						
+
 						String key = lemma+"/"+pos;
 						System.err.println("adding\t"+key+"\t"+token);
 						conjugationMap.put(key, token);
 					}
 				}
-				
+
 			}
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
-	
-	
-	
+
+
+
 	/**
 	 * @param args
 	 */
@@ -193,9 +215,9 @@ public class VerbConjugator {
 		VerbConjugator vc = new VerbConjugator();
 		vc.readFromTreebankFile(args[0]);
 		vc.save("verbConjugations.txt");
-		
+
 		//vc.load("verbConjugations.txt");
-		
+
 		System.err.println(vc.getSurfaceForm("walk", "VBZ"));
 		System.err.println(vc.getSurfaceForm("walk", "VBD"));
 		System.err.println(vc.getSurfaceForm("alleviate", "VBZ"));
@@ -204,11 +226,11 @@ public class VerbConjugator {
 		System.err.println(vc.getBaseFormCount("alleviate"));
 	}
 
-	
+
 	//map from lemma+pos to surface form (e.g., walk+VBZ => walks)
 	Map<String, String> conjugationMap;
-	
+
 	Map<String, Long> baseFormCountMap;
 
-	
+
 }

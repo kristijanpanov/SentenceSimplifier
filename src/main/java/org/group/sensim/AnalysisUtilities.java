@@ -28,9 +28,7 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import edu.stanford.nlp.ling.Word;
 import org.apache.commons.lang.StringUtils;
 
 
@@ -50,8 +48,9 @@ import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
 import edu.stanford.nlp.util.Pair;
 
 
+
 public class AnalysisUtilities {
-    private AnalysisUtilities() {
+    private AnalysisUtilities(){
         parser = null;
 
         conjugator = new VerbConjugator();
@@ -62,27 +61,27 @@ public class AnalysisUtilities {
     }
 
 
-    public static void addPeriodIfNeeded(Tree input) {
+    public static void addPeriodIfNeeded(Tree input){
         String tregexOpStr = "ROOT < (S=mainclause !< /\\./)";
         TregexPattern matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         TregexMatcher matcher = matchPattern.matcher(input);
 
-        if (matcher.find()) {
+        if(matcher.find()){
             TsurgeonPattern p;
             List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
             List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
 
             ps.add(Tsurgeon.parseOperation("insert (. .) >-1 mainclause"));
             p = Tsurgeon.collectOperations(ps);
-            ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
+            ops.add(new Pair<TregexPattern,TsurgeonPattern>(matchPattern,p));
             Tsurgeon.processPatternsOnTree(ops, input);
         }
     }
 
-    public static int getNumberOfMatchesInTree(String tregexExpression, Tree t) {
+    public static int getNumberOfMatchesInTree(String tregexExpression, Tree t){
         int res = 0;
         TregexMatcher m = TregexPatternFactory.getPattern(tregexExpression).matcher(t);
-        while (m.find()) {
+        while(m.find()){
             res++;
         }
         return res;
@@ -90,32 +89,38 @@ public class AnalysisUtilities {
 
 
     public static List<String> getSentences(String document) {
+        DocumentPreprocessor dp = new DocumentPreprocessor(false);
         List<String> res = new ArrayList<String>();
         String sentence;
+
 
         document = preprocess(document);
 
         StringReader reader = new StringReader(document);
-        DocumentPreprocessor dp = new DocumentPreprocessor(reader); //it was previously false.
 
-        Iterator<List<HasWord>> iterDocument = dp.iterator();
+        List<List<? extends HasWord>> docs = new ArrayList<List<? extends HasWord>>();
+        Iterator<List<? extends HasWord>> iter1 ;
+        Iterator<? extends HasWord> iter2;
 
-        List<HasWord> wordsInSentence;
-        while (iterDocument.hasNext()) {
-            wordsInSentence = iterDocument.next();
+        try{
+            docs = dp.getSentencesFromText(reader);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+        iter1 = docs.iterator();
+        while(iter1.hasNext()){
+            iter2 = iter1.next().iterator();
             sentence = "";
-            for (HasWord hasWord : wordsInSentence) {
-                String tmp = hasWord.word();
-                sentence += tmp + " ";
-
-                if (sentence.length() > 0) {
-                    sentence.substring(0, sentence.length() - 1);
+            while(iter2.hasNext()){
+                String tmp = iter2.next().word().toString();
+                sentence += tmp;
+                if(iter2.hasNext()){
+                    sentence += " ";
                 }
             }
-            System.out.println("final sentence: " + sentence);
             res.add(sentence);
         }
-//
 
         return res;
     }
@@ -128,15 +133,14 @@ public class AnalysisUtilities {
         return tree.label().toString() + "[" + StringUtils.join(toks, " ") + "]";
     }
 
-    public static void downcaseFirstToken(Tree inputTree) {
+    public static void downcaseFirstToken(Tree inputTree){
         Tree firstWordTree = inputTree.getLeaves().get(0);
-
-        if (firstWordTree == null) return;
+        if(firstWordTree == null)	return;
         Tree preterm = firstWordTree.parent(inputTree);
-        String firstWord = firstWordTree.yieldWords().stream().map(Word::toString).collect(Collectors.joining(" "));
-        if (!preterm.label().toString().matches("^NNP.*") && !firstWord.equals("I")) {
+        String firstWord = firstWordTree.yield().toString();
+        if(!preterm.label().toString().matches("^NNP.*") && !firstWord.equals("I")){
             //if(firstWord.indexOf('-') == -1 && !firstWord.equals("I")){
-            firstWord = firstWord.substring(0, 1).toLowerCase() + firstWord.substring(1);
+            firstWord = firstWord.substring(0,1).toLowerCase() + firstWord.substring(1);
             firstWordTree.label().setValue(firstWord);
         }
 
@@ -144,22 +148,17 @@ public class AnalysisUtilities {
     }
 
 
-    public static void upcaseFirstToken(Tree inputTree) {
+    public static void upcaseFirstToken(Tree inputTree){
         Tree firstWordTree = inputTree.getLeaves().get(0);
-        if (firstWordTree == null) return;
+        if(firstWordTree == null)	return;
 
-        ArrayList<Word> words = firstWordTree.yieldWords();
-        String firstWord = "";
-        if (!words.isEmpty()) {
-            firstWord = words.get(0).word();
-        }
-        firstWord = firstWord.substring(0, 1).toUpperCase() + firstWord.substring(1);
-
+        String firstWord = firstWordTree.yield().toString();
+        firstWord = firstWord.substring(0,1).toUpperCase() + firstWord.substring(1);
         firstWordTree.label().setValue(firstWord);
-
 
         //if(QuestionTransducer.DEBUG) System.err.println("upcaseFirstToken: "+inputTree.toString());
     }
+
 
 
     public static String preprocess(String sentence) {
@@ -170,7 +169,7 @@ public class AnalysisUtilities {
         //remove single words in parentheses.
         //the stanford parser api messed up on these
         //by removing the parentheses but not the word in them
-        sentence = sentence.replaceAll("\\(\\S*\\)", "");
+        sentence = sentence.replaceAll("\\(\\S*\\)","");
 
         //some common unicode characters that the tokenizer throws out otherwise
         sentence = sentence.replaceAll("â€”", "--");
@@ -198,18 +197,19 @@ public class AnalysisUtilities {
         //simply remove other unicode characters
         //if not, the tokenizer replaces them with spaces,
         //which wreaks havoc on the final parse sometimes
-        for (int i = 0; i < sentence.length(); i++) {
-            if (sentence.charAt(i) > 'z') {
-                sentence = sentence.substring(0, i) + sentence.substring(i + 1);
+        for(int i=0;i<sentence.length();i++){
+            if(sentence.charAt(i) > 'z'){
+                sentence = sentence.substring(0,i)+sentence.substring(i+1);
             }
         }
 
 
         //add punctuation to the end if necessary
         Matcher matcher = Pattern.compile(".*\\.['\"\n ]*$", Pattern.DOTALL).matcher(sentence);
-        if (!matcher.matches()) {
+        if(!matcher.matches()){
             sentence += ".";
         }
+
 
 
         return sentence;
@@ -231,29 +231,30 @@ public class AnalysisUtilities {
     }
 
 
-    public VerbConjugator getConjugator() {
+    public VerbConjugator getConjugator(){
         return conjugator;
     }
 
 
-    public CollinsHeadFinder getHeadFinder() {
+    public CollinsHeadFinder getHeadFinder(){
         return headfinder;
     }
 
 
-    public static AnalysisUtilities getInstance() {
-        if (instance == null) {
+    public static AnalysisUtilities getInstance(){
+        if(instance == null){
             instance = new AnalysisUtilities();
         }
         return instance;
     }
 
 
+
     public ParseResult parseSentence(String sentence) {
         String result = "";
         //System.err.println(sentence);
         //see if a parser socket server is available
-        int port = new Integer(GlobalProperties.getProperties().getProperty("parserServerPort", "5556"));
+        int port = new Integer(GlobalProperties.getProperties().getProperty("parserServerPort","5556"));
         String host = "127.0.0.1";
         Socket client;
         PrintWriter pw;
@@ -262,7 +263,7 @@ public class AnalysisUtilities {
         Tree parse = null;
         double parseScore = Double.MIN_VALUE;
 
-        try {
+        try{
             client = new Socket(host, port);
 
             pw = new PrintWriter(client.getOutputStream());
@@ -270,15 +271,15 @@ public class AnalysisUtilities {
             pw.println(sentence);
             pw.flush(); //flush to complete the transmission
 
-            while ((line = br.readLine()) != null) {
+            while((line = br.readLine())!= null){
                 //if(!line.matches(".*\\S.*")){
                 //        System.out.println();
                 //}
-                if (br.ready()) {
+                if(br.ready()){
                     line = line.replaceAll("\n", "");
                     line = line.replaceAll("\\s+", " ");
                     result += line + " ";
-                } else {
+                }else{
                     parseScore = new Double(line);
                 }
             }
@@ -287,52 +288,51 @@ public class AnalysisUtilities {
             pw.close();
             client.close();
 
-            if (parse == null) {
+            if(parse == null){
                 parse = readTreeFromString("(ROOT (. .))");
                 parseScore = -99999.0;
             }
 
-            if (GlobalProperties.getDebug()) System.err.println("result (parse):" + result);
+            if(GlobalProperties.getDebug()) System.err.println("result (parse):"+result);
             parse = readTreeFromString(result);
             return new ParseResult(true, parse, parseScore);
 
         } catch (Exception ex) {
-            if (GlobalProperties.getDebug()) System.err.println("Could not connect to parser server.");
+            if(GlobalProperties.getDebug()) System.err.println("Could not connect to parser server.");
             //ex.printStackTrace();
         }
 
-        //TODO change it with log.debug
-        System.err.println("parsing: " + sentence);
+        System.err.println("parsing:"+sentence);
 
         //if socket server not available, then use a local parser object
-        if (parser == null) {
+        if(parser == null){
             try {
                 Options op = new Options();
-                String serializedInputFileOrUrl = GlobalProperties.getProperties().getProperty("parserGrammarFile", "config" + File.separator + "englishFactored.ser.gz");
-                parser = LexicalizedParser.loadModel(serializedInputFileOrUrl, op);
-				/*
-				int maxLength = Integer.parseInt(GlobalProperties.getProperties().getProperty("parserMaxLength", "40"));
-				parser.setMaxLength(maxLength); //setMaxLength does not exist.
-				TODO Find a solution how to set the maxLength of a sentence.
-				*/
+                String serializedInputFileOrUrl = GlobalProperties.getProperties()
+                        .getProperty("parserGrammarFile", "src" + File.separator + "main" + File.separator + "resources" + File.separator + "englishFactored.ser.gz");
+                parser = new LexicalizedParser(serializedInputFileOrUrl, op);
+                int maxLength = new Integer(GlobalProperties.getProperties().getProperty("parserMaxLength", "40")).intValue();
+                parser.setMaxLength(maxLength);
                 parser.setOptionFlags("-outputFormat", "oneline");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        try {
-            parse = parser.parse(sentence);
+        try{
+            if(parser.parse(sentence)){
+                parse = parser.getBestParse();
 
-            //remove all the parent annotations (this is a hacky way to do it)
-            String ps = parse.toString().replaceAll("\\[[^\\]]+/[^\\]]+\\]", "");
-            parse = AnalysisUtilities.getInstance().readTreeFromString(ps);
+                //remove all the parent annotations (this is a hacky way to do it)
+                String ps = parse.toString().replaceAll("\\[[^\\]]+/[^\\]]+\\]", "");
+                parse = AnalysisUtilities.getInstance().readTreeFromString(ps);
 
-            //parseScore = parser.getPCFGScore();
-            //TODO check if parse.score() = parser.getPCFGScore
-            return new ParseResult(true, parse, parse.score());
+                parseScore = parser.getPCFGScore();
+                System.out.println("praserScore:" + parseScore);
 
-        } catch (Exception e) {
+                return new ParseResult(true, parse, parseScore);
+            }
+        }catch(Exception e){
         }
 
         parse = readTreeFromString("(ROOT (. .))");
@@ -341,33 +341,30 @@ public class AnalysisUtilities {
     }
 
 
-    public String getLemma(String word, String pos) {
-        if (!(pos.startsWith("N") || pos.startsWith("V") || pos.startsWith("J") || pos.startsWith("R"))
-                || pos.startsWith("NNP")) {
+    public String getLemma(String word, String pos){
+        if(!(pos.startsWith("N") || pos.startsWith("V") || pos.startsWith("J") || pos.startsWith("R"))
+                || pos.startsWith("NNP"))
+        {
             return word.toLowerCase();
         }
 
         String res = word.toLowerCase();
 
-        if (res.equals("is") || res.equals("are") || res.equals("were") || res.equals("was")) {
+        if(res.equals("is") || res.equals("are") || res.equals("were") || res.equals("was")){
             res = "be";
-        } else {
-            try {
+        }else{
+            try{
                 //Iterator<String> iter = Dictionary.getInstance().getMorphologicalProcessor().lookupAllBaseForms(POS.VERB, res).iterator();
 
                 IndexWord iw;
-
-                if (pos.startsWith("V"))
-                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.VERB, res);
-                else if (pos.startsWith("N"))
-                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.NOUN, res);
-                else if (pos.startsWith("J"))
-                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.ADJECTIVE, res);
+                if(pos.startsWith("V")) iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.VERB, res);
+                else if(pos.startsWith("N")) iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.NOUN, res);
+                else if(pos.startsWith("J")) iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.ADJECTIVE, res);
                 else iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.ADVERB, res);
 
-                if (iw == null) return res;
+                if(iw == null) return res;
                 res = iw.getLemma();
-            } catch (Exception e) {
+            }catch(Exception e){
                 e.printStackTrace();
             }
         }
@@ -376,16 +373,17 @@ public class AnalysisUtilities {
     }
 
 
+
     /**
      * Remove traces and non-terminal decorations (e.g., "-SUBJ" in "NP-SUBJ") from a Penn Treebank-style tree.
      *
      * @param inputTree
      */
-    public void normalizeTree(Tree inputTree) {
+    public void normalizeTree(Tree inputTree){
         inputTree.label().setFromString("ROOT");
 
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<>();
-        List<TsurgeonPattern> ps = new ArrayList<>();
+        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+        List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
         String tregexOpStr;
         TregexPattern matchPattern;
         TsurgeonPattern p;
@@ -397,7 +395,7 @@ public class AnalysisUtilities {
         ps.add(Tsurgeon.parseOperation("prune emptynode"));
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         p = Tsurgeon.collectOperations(ps);
-        ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
+        ops.add(new Pair<TregexPattern,TsurgeonPattern>(matchPattern,p));
         Tsurgeon.processPatternsOnTree(ops, inputTree);
 
         Label nonterminalLabel;
@@ -405,9 +403,9 @@ public class AnalysisUtilities {
         tregexOpStr = "/.+\\-.+/=nonterminal < __";
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(inputTree);
-        while (matcher.find()) {
+        while(matcher.find()){
             nonterminalLabel = matcher.getNode("nonterminal");
-            if (nonterminalLabel == null) continue;
+            if(nonterminalLabel == null) continue;
             nonterminalLabel.setFromString(tlp.basicCategory(nonterminalLabel.value()));
         }
 
@@ -420,7 +418,7 @@ public class AnalysisUtilities {
      *
      * @param input
      */
-    public static void removeExtraQuotes(Tree input) {
+    public static void removeExtraQuotes(Tree input){
         List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
         String tregexOpStr;
         TregexPattern matchPattern;
@@ -432,20 +430,21 @@ public class AnalysisUtilities {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         ps.add(Tsurgeon.parseOperation("prune quote"));
         p = Tsurgeon.collectOperations(ps);
-        ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
+        ops.add(new Pair<TregexPattern,TsurgeonPattern>(matchPattern,p));
         Tsurgeon.processPatternsOnTree(ops, input);
 
 
     }
 
 
-    public static String getCleanedUpYield(Tree inputTree) {
-        Tree copyTree = inputTree.deepCopy();
+    public static String getCleanedUpYield(Tree inputTree){
+        Tree copyTree = inputTree.deeperCopy();
 
-        if (GlobalProperties.getDebug()) System.err.println(copyTree.toString());
+        if(GlobalProperties.getDebug())System.err.println(copyTree.toString());
 
-        return cleanUpSentenceString(copyTree.yieldWords().stream().map(Word::toString).collect(Collectors.joining(" ")));
+        return cleanUpSentenceString(copyTree.yield().toString());
     }
+
 
 
     public static String cleanUpSentenceString(String s) {
@@ -476,28 +475,28 @@ public class AnalysisUtilities {
         return res;
     }
 
-    public static boolean cCommands(Tree root, Tree n1, Tree n2) {
-        if (n1.dominates(n2)) return false;
+    public static boolean cCommands(Tree root, Tree n1, Tree n2){
+        if(n1.dominates(n2)) return false;
 
         Tree n1Parent = n1.parent(root);
-        while (n1Parent != null && n1Parent.numChildren() == 1) {
+        while(n1Parent != null && n1Parent.numChildren() == 1){
             n1Parent = n1Parent.parent(root);
         }
 
-        if (n1Parent != null && n1Parent.dominates(n2)) return true;
+        if(n1Parent != null && n1Parent.dominates(n2)) return true;
 
         return false;
     }
 
 
-    public Tree readTreeFromString(String parseStr) {
+    public Tree readTreeFromString(String parseStr){
         //read in the input into a Tree data structure
         TreeReader treeReader = new PennTreeReader(new StringReader(parseStr), tree_factory);
         Tree inputTree = null;
-        try {
+        try{
             inputTree = treeReader.readTree();
 
-        } catch (IOException e) {
+        }catch(IOException e){
             e.printStackTrace();
         }
         return inputTree;
@@ -508,7 +507,7 @@ public class AnalysisUtilities {
         //|| sentence.indexOf("''") != -1
         //|| sentence.indexOf("``") != -1
         //|| sentence.indexOf("*") != -1);
-        if (sentence.indexOf("*") != -1) {
+        if(sentence.indexOf("*") != -1){
             return true;
         }
 
@@ -518,6 +517,7 @@ public class AnalysisUtilities {
 
         return false;
     }
+
 
 
     public String getSurfaceForm(String lemma, String pos) {

@@ -1,8 +1,7 @@
 package org.group.sensim.eval;
 
-import edu.stanford.nlp.parser.metrics.Eval;
+
 import org.aksw.fox.binding.FoxResponse;
-import org.aksw.fox.data.Entity;
 import org.aksw.gerbil.transfer.nif.Document;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

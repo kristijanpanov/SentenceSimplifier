@@ -1,20 +1,20 @@
 package org.group.sensim;
 
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
-import edu.stanford.nlp.parser.lexparser.LexicalizedParserQuery;
 import edu.stanford.nlp.parser.lexparser.Options;
 import edu.stanford.nlp.trees.*;
 import edu.stanford.nlp.util.ScoredObject;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
+
+import java.net.*;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Wrapper class to run the Stanford Parser as a socket server so the grammar need not
  * be loaded for every new sentence.
- * 
+ *
  * @author mheilman@cmu.edu
  *
  */
@@ -27,7 +27,7 @@ public class StanfordParserServer  {
 		String serializedInputFileOrUrl = null;
 		int port = 5556;
 		int maxLength = 40;
-			
+
 		// variables needed to process the files to be parse
 		String sentenceDelimiter = null;
 		int argIndex = 0;
@@ -73,15 +73,14 @@ public class StanfordParserServer  {
 			System.exit(0);
 		}
 		try {
-			lp = LexicalizedParser.getParserFromSerializedFile(serializedInputFileOrUrl);
+			lp = new LexicalizedParser(serializedInputFileOrUrl, op);
 		} catch (IllegalArgumentException e) {
 			System.err.println("Error loading parser, exiting...");
 			System.exit(0);
 		}
-		//lp.setMaxLength(maxLength); TODO consider how to set maxLength
-
+		lp.setMaxLength(maxLength);
 		lp.setOptionFlags("-outputFormat", "oneline");
-		
+
 		// declare a server socket and a client socket for the server
 		// declare an input and an output stream
 		ServerSocket parseServer = null;
@@ -93,9 +92,9 @@ public class StanfordParserServer  {
 		}
 		catch (IOException e) {
 			System.err.println(e);
-		} 
+		}
 
-		// Create a socket object from the ServerSocket to listen and accept 
+		// Create a socket object from the ServerSocket to listen and accept
 		// connections.
 		// Open input and output streams
 
@@ -113,34 +112,34 @@ public class StanfordParserServer  {
 					doc += br.readLine();
 				}while(br.ready());
 				System.err.println("received: " + doc);
-				
+
 				//PARSE
 				try{
 					lp.parse(doc);
-					
+
 					//OUTPUT RESULT
-					Tree bestParse = lp.parserQuery().getBestParse();
+					Tree bestParse = lp.getBestParse();
 					TreePrint tp = lp.getTreePrint();
 					tp.printTree(bestParse, outputWriter);
-					outputWriter.println(lp.parserQuery().getPCFGScore());
+					outputWriter.println(lp.getPCFGScore());
 					//String output = bestParse.toString();
 					//outputWriter.println(output);
 					//System.err.println("sent: " + output);
-						
+
 					int k=5;
-					System.err.println("best factored parse:\n"+lp.parserQuery().getBestParse().toString());
+					System.err.println("best factored parse:\n"+lp.getBestParse().toString());
 					System.err.println("k-best PCFG parses:");
-					List<ScoredObject<Tree>> kbest = lp.parserQuery().getKBestPCFGParses(k);
+					List<ScoredObject<Tree>> kbest = lp.getKBestPCFGParses(k);
 					for(int i=0; i<kbest.size(); i++){
 						System.err.println(kbest.get(i).object().toString());
 					}
-					
+
 				}catch(Exception e){
 					outputWriter.println("(ROOT (. .))");
 					outputWriter.println("-999999999.0");
 					e.printStackTrace();
 				}
-				
+
 				outputWriter.flush();
 				outputWriter.close();
 
