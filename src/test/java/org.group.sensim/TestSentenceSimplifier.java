@@ -1219,7 +1219,6 @@ public class TestSentenceSimplifier extends TestCase{
         assertTrue(res.toString(), setContainsTreeWithYield(res, "The architectural styles reflect Chinese influences."));
         assertTrue(res.toString(), setContainsTreeWithYield(res, "The architectural styles reflect Malay influences."));
 
-
     }
 
     public void testToughCases(){
