@@ -17,6 +17,11 @@
       <option name="url" value="file://C:\Users\krist\OneDrive - Universität Paderborn\9.Semester\SentenceSimplifier_git/repository" />
     </remote-repository>
     <remote-repository>
+      <option name="id" value="local repository" />
+      <option name="name" value="local repository" />
+      <option name="url" value="file://C:\Users\krist\OneDrive - Universität Paderborn\9.Semester\SentenceSimplifier_git\coref/repository" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="central" />
       <option name="name" value="Maven Central repository" />
       <option name="url" value="https://repo1.maven.org/maven2" />
