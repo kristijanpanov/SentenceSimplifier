@@ -23,9 +23,9 @@
     </build>
 
 
-    <modules>
-        <module>coref</module>
-    </modules>
+    <!--  <modules>
+          <module>coref</module>
+      </modules> -->
 
     <groupId>org.group</groupId>
     <artifactId>sensim</artifactId>

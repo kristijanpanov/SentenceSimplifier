@@ -1,4 +1,4 @@
-package possequences;
+package org.group.sensim.possequences;
 
 import edu.stanford.nlp.trees.Tree;
 import org.group.sensim.possequences.POSMarker;
