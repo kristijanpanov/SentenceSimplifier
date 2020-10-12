@@ -328,7 +328,7 @@ public class AnalysisUtilities {
                 parse = AnalysisUtilities.getInstance().readTreeFromString(ps);
 
                 parseScore = parser.getPCFGScore();
-                System.out.println("praserScore:" + parseScore);
+               // System.out.println("praserScore:" + parseScore);
 
                 return new ParseResult(true, parse, parseScore);
             }

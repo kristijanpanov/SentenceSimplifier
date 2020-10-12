@@ -58,6 +58,7 @@ public class TestSentenceSimplifier extends TestCase{
         Iterator<Question> iter = trees.iterator();
         while(iter.hasNext()){
             String tmp = AnalysisUtilities.getCleanedUpYield(iter.next().getIntermediateTree());
+            //System.out.println(tmp);
             if(tmp.equals(yield)){
                 return true;
             }
@@ -1205,12 +1206,11 @@ public class TestSentenceSimplifier extends TestCase{
         assertTrue(res.toString(), setContainsTreeWithYield(res, "The book is yellow."));
         assertTrue(res.toString(), setContainsTreeWithYield(res, "The book is old."));
 
-        //TODO cover this case.
-//        sentence = "The book is very yellow and extremely old.";
-//        parse = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
-//        res = simp.simplify(parse);
-//        assertTrue(res.toString(), setContainsTreeWithYield(res, "The book is very yellow."));
-//        assertTrue(res.toString(), setContainsTreeWithYield(res, "The book is extremely old."));
+        sentence = "The book is very yellow and extremely old.";
+        parse = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
+        res = simp.simplify(parse);
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "The book is very yellow."));
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "The book is extremely old."));
 
         sentence = "The architectural styles reflect American, Spanish, Chinese, and Malay influences.";
         parse = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
@@ -1219,6 +1219,30 @@ public class TestSentenceSimplifier extends TestCase{
         assertTrue(res.toString(), setContainsTreeWithYield(res, "The architectural styles reflect Spanish influences."));
         assertTrue(res.toString(), setContainsTreeWithYield(res, "The architectural styles reflect Chinese influences."));
         assertTrue(res.toString(), setContainsTreeWithYield(res, "The architectural styles reflect Malay influences."));
+
+
+        sentence = "By the 1980s , computers became small and cheap enough to replace simple mechanical controls in domestic appliances such as washing machines.";
+        parse = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
+        res = simp.simplify(parse);
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Computers became small by the 1980s."));
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Computers became cheap enough to replace simple mechanical controls in domestic appliances such as washing machines by the 1980s."));
+
+        sentence = "Computing devices became more powerful and flexible during the 1930s and 1940s.";
+        parse = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
+        res = simp.simplify(parse);
+        System.out.println(res);
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Computing devices became more powerful during the 1930s."));
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Computing devices became more powerful during the 1940s."));
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Computing devices became more flexible during the 1930s."));
+
+        sentence = "Metamorphic rock which is made when either of the other two types are changed by high or low temperatures and pressures.";
+        parse = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
+        res = simp.simplify(parse);
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Metamorphic rock which is made when either of the other two types are changed by high or low temperatures."));
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Metamorphic rock which is made when either of the other two types are changed by high or low pressures."));
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Metamorphic rock which is made when either of the other two types are changed by high temperatures."));
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Metamorphic rock which is made when either of the other two types are changed by low temperatures."));
+        assertTrue(res.toString(), setContainsTreeWithYield(res, "Metamorphic rock which is made when either of the other two types are changed by low pressures."));
 
     }
 

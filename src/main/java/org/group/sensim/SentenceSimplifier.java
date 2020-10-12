@@ -260,8 +260,9 @@ public class SentenceSimplifier {
         extractNounParticipialModifiers(extracted, orig);
         extractNonRestrictiveRelativeClauses(extracted, orig);
         extractAppositives(extracted, orig);
-        extractADJPs(extracted, orig);
         extractVerbParticipialModifiers(extracted, orig);
+        extractADJPs(extracted, orig);
+
         //extractWITHPartcipialPhrases(extracted, orig); //too rare to worry about
         if(extractFromVerbComplements) extractComplementClauses(extracted, orig);
 
@@ -1366,69 +1367,112 @@ public class SentenceSimplifier {
         // (ROOT (S (NP (DT The) (NN book)) (VP (VBZ is) (ADJP (JJ yellow) (CC and) (JJ old))) (. .)))
         // (ROOT (S (NP (DT The) (NN book)) (VP (VBZ is) (ADJP (ADJP (RB very) (JJ yellow)) (CC and) (ADJP (RB pretty) (JJ old)))) (. .
         // )))
-        tregexOpStr = "ROOT < (S=src < (NP=subj $++ (VP=verb << (ADJP=allAdjps" +
+        tregexOpStr = "ROOT=root < (S=src < (NP=subj $++ (VP=verb << (ADJP=allAdjps" +
                 " [ < (JJ $++ JJ & $++ ( CC <# and|or ))" + //subject has two adjectives.
                 " | << (ADJP $++ ADJP & $++ (CC <# and ))]))))"; //has many adjectives divided with and
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
 
         if(matcher.find()) {
+            Tree rootTree = matcher.getNode("root").deeperCopy();
+            Tree inputTree =  matcher.getNode("root").deeperCopy(); //input.getIntermediateTree();
             Tree sourceTree = matcher.getNode("src").deeperCopy();
             Tree subjectTree = matcher.getNode("subj").deeperCopy();
-            Tree verb = matcher.getNode("verb");
+            Tree verbPhraseTree = matcher.getNode("verb");
             Tree allAdjp = matcher.getNode("allAdjps");
 
+            System.out.println("Source : " + sourceTree.getChildrenAsList());
+
             System.out.println("Subject : " + subjectTree.yield());
-            System.out.println("First child of verb: " + verb.getChild(0).yield());
-            System.out.println("Verb (full): " + verb.yield());
-            System.out.println("Verb LAST child : " + verb.lastChild());
+            System.out.println("First child of verb: " + verbPhraseTree.getChild(0).yield());
+
+            System.out.println("Verb (full): " + verbPhraseTree.yield());
+            System.out.println("Verb LAST child : " + verbPhraseTree.lastChild());
             System.out.println("children as list ALLADJP " + allAdjp.getChildrenAsList());
             System.out.println("ALL ADJP NODE: " + allAdjp.yield());
-            System.out.println("number children of VERB:" +verb.numChildren());
+            System.out.println("number children of VERB:" +verbPhraseTree.numChildren());
             System.out.println("srcTree lastChild: :" +sourceTree.lastChild().yield());
 
             List<Tree> adjpTrees = new ArrayList<Tree>();
-            Tree afterAdjpTree = null;
+            List<Tree> beforeAdjp = new ArrayList<Tree>();
+            boolean extractedAdjp=false;
+
+//[(ADJP (JJ small)), (CC and), (ADJP (JJ cheap) (RB enough) (S (VP (TO to) (VP (VB replace) (NP (JJ simple) (JJ mechanical) (NNS controls)) (PP (IN in) (NP (NP (JJ domestic) (NNS appliances)) (PP (JJ such) (IN as) (NP (VBG washing) (NNS machines)))))))))]
+            System.out.println("--------");
             for (Tree adjpTree : allAdjp) {
+                if (!adjpTree.value().equals(",")){
+                    //System.out.println("iterating through: " + adjpTree.value());
+                }
                 //means it has adjp-trees inside it, divided by 'and'. Save these trees.
                 if(adjpTree.value().equals("ADJP")){
                     for (Tree adTree : adjpTree.getChildrenAsList()){
                         if (adTree.value().equals("ADJP")) {
                             adjpTrees.add(adTree);
+                            extractedAdjp = true;
                         }
                     }
                 }
-                else {
+                else if (!extractedAdjp){
                     if (adjpTree.value().equals("JJ")) {
 //                    System.out.println("JJ part: " + adjpTree.yield());
                         adjpTrees.add(adjpTree);
                     }
+                    if (adjpTree.value().equals("RBR")) {
+//                    System.out.println("JJ part: " + adjpTree.yield());
+                        beforeAdjp.add(adjpTree);
+                    }
                 }
             }
 
-            if (!verb.lastChild().value().equals("ADJP")) {
-                try {
-                    afterAdjpTree = verb.lastChild().lastChild();
-//                    System.out.println("NP after adjp: " + afterAdjpTree);
-                } catch (NullPointerException e) {
-                    //tree has no further chuld.
+            int indexAdjp = 0;
+            for (Tree t : inputTree){
+                if(allAdjp.equals(t)){
+                    //PROBI nesto u taj stil word.parent(treeSent.firstChild()).label().toString()
+                    System.out.println("inputTree Tree " +  inputTree.labeledYield());
+                    //tva funkcionira.. izmisli kak da go upotrebas, vidi dali sekojpat e child0
+
+                    Tree parent = t.parent(inputTree);
+                    Tree gparent = t.parent(inputTree).parent(inputTree);
+
+                    indexAdjp = t.parent(gparent).indexOf(t);
+//                    System.out.println("index : " +  indexAdjp);
+//
+                    System.out.println( "REMOVING: " + parent.removeChild(indexAdjp).labeledYield());
+//                    System.out.println("inputTree Tree " +  inputTree.labeledYield());
+
+                    for (Tree adjpt : adjpTrees) {
+                        System.out.println("Adding adjpt: " + adjpt.labeledYield());
+                        int countAddedChildren=0;
+                        //add adjp on the position of the deleted node
+                        parent.addChild(indexAdjp, AnalysisUtilities.getInstance().readTreeFromString("("+adjpt.label()+" "+adjpt.yield()+")"));
+                        countAddedChildren++;
+
+                        for (Tree before : beforeAdjp ){
+                            System.out.println("beforeAdjp" + before.labeledYield());
+                            parent.addChild(indexAdjp, AnalysisUtilities.getInstance().readTreeFromString("("+before.label()+" "+before.yield()+")"));
+                            countAddedChildren++;
+                        }
+
+
+
+                        System.out.println("inputTree Tree      " +  inputTree.labeledYield());
+                        System.out.println("Original Input Tree " +  input.getIntermediateTree().labeledYield());
+
+                        Question newTreeWithFeatures = input.deeperCopy();
+                        newTree = inputTree.deepCopy();
+                        newTreeWithFeatures.setIntermediateTree(newTree);
+                        extracted.add(newTreeWithFeatures);
+                        addIfNovel(extracted, newTreeWithFeatures);
+
+                        //remove again adjp, in order to add the next adjp and create new sentence.
+                        for (int i = 0; i < countAddedChildren; i++ ) {
+                            parent.removeChild(indexAdjp);
+                        }
+                    }
+                    //verbPhraseTree.parent(sourceTree).remove(allAdjp);
                 }
             }
-            //Add the new simple sentences.
-            for (Tree adjpT : adjpTrees) {
-                newTree = factory.newTreeNode("ROOT", new ArrayList<Tree>());
-                newTree.addChild(subjectTree.deeperCopy());
-                newTree.addChild(verb.getChild(0));
-                newTree.addChild(adjpT);
-                if (afterAdjpTree != null ){
-                    newTree.addChild(afterAdjpTree);
-                }
-                newTree.addChild(sourceTree.lastChild());
-                Question newTreeWithFeatures = input.deeperCopy();
-                newTreeWithFeatures.setIntermediateTree(newTree);
-                extracted.add(newTreeWithFeatures);
-                addIfNovel(extracted, newTreeWithFeatures);
-            }
+
         }
     }
 
@@ -1439,21 +1483,14 @@ public class SentenceSimplifier {
     }
 
 
-
-
-
     public boolean getBreakNPs() {
         return breakNPs;
     }
 
 
-
     public void setExtractFromVerbComplements(boolean extractFromVerbComplements) {
         this.extractFromVerbComplements = extractFromVerbComplements;
     }
-
-
-
 
 
     public boolean getExtractFromVerbComplements() {
@@ -1622,12 +1659,10 @@ public class SentenceSimplifier {
                 if(GlobalProperties.getDebug()) System.err.println("\nInput Text:");
             }
 
-
         }catch(Exception e){
             e.printStackTrace();
         }
     }
-
 
     /**
      * Simplifies complex sentences into more one-factual sentences and returns them back as a text.
@@ -1635,6 +1670,26 @@ public class SentenceSimplifier {
      * @param doc - the text to be simplified
      */
     public String simplifyFactualComplexSentence(String doc) {
+        Map<Question, String> questionSentence = new HashMap<>();
+        questionSentence = simplifyFactualComplexSentenceAsTree(doc);
+        String sentences = "";
+
+        for (String s : questionSentence.values()){
+            sentences +=" " + s;
+        }
+
+        return sentences;
+    }
+
+    /**
+     * Simplifies complex sentences into more one-factual sentences and returns them back as a Qustion(containing a parsed Tree) and as a String.
+     *
+     * @param doc - the text to be simplified
+     */
+
+    public Map<Question, String> simplifyFactualComplexSentenceAsTree(String doc) {
+        Map<Question, String> questionSentence = new HashMap<>();
+
         SentenceSimplifier ss = SentenceSimplifier.getInstance();
         String simpleSentences = "";
         long startTime = System.currentTimeMillis();
@@ -1653,17 +1708,21 @@ public class SentenceSimplifier {
             }
             output.clear();
             output.addAll(ss.simplify(parsed));
+
             for (Question q : output) {
                 String simSen = AnalysisUtilities.getCleanedUpYield(q.getIntermediateTree());
-                simpleSentences +=" " + simSen;
                 System.out.println(simSen);
                 //System.out.println(q.findLogicalWordsAboveIntermediateTree());
+                questionSentence.put(q, simSen);
             }
         }
+
         System.out.println("Seconds Elapsed:\t" + ((System.currentTimeMillis() - startTime) / 1000.0));
         System.out.println("Returning:\t" + simpleSentences);
-        return simpleSentences;
+
+        return questionSentence;
     }
+
 
     public void setMainClauseOnly(boolean b) {
         mainClauseOnly = b;
