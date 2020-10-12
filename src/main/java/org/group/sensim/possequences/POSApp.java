@@ -31,9 +31,6 @@ public class POSApp {
         String testFile = "./src/main/resources/eval/RSS-500.ttl";
         extractPOSfromTtl(testFile);
 
-        //setence declared as irrelevant, but "Kolding" is an entity. (NN instead of NNP).
-//        String sentence = "Kolding is a transportation , commercial , and manufacturing centre , and has many industrial companies .";
-//        System.out.println(posMarker.extractPOStags(sentence));
     }
 
     /**
@@ -47,7 +44,7 @@ public class POSApp {
     private static void extractPOSfromTtl(String ttlFile) throws FileNotFoundException, UnsupportedEncodingException {
         NifReader nf = new NifReader();
         List<Document> docs = nf.readData(ttlFile);
-        SentenceSimplifier ss = SentenceSimplifier.getInstance();
+        //SentenceSimplifier ss = SentenceSimplifier.getInstance();
         PrintWriter writer = new PrintWriter("marking_entityToPOS.txt", "UTF-8");
 
         docs.forEach(basisDoc -> {

@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import org.group.sensim.AnalysisUtilities;
 import org.group.sensim.GlobalProperties;
 import org.group.sensim.ParseResult;
+import org.group.sensim.Question;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -63,6 +64,7 @@ public class POSMarker {
      * @return
      */
     private List<String> initRelevantTags() {
+        //TODO insert these in a document. The document should be updated after running the EntityPOSUpdator := POSApp
         List<String> relevantPosTags = new ArrayList<String>();
         relevantPosTags.add("NNP");
         relevantPosTags.add("NNPS");
@@ -80,6 +82,40 @@ public class POSMarker {
         parseResult = AnalysisUtilities.getInstance().parseSentence(sentence);
         return parseResult.parse;
     }
+
+    /**
+     * Extracts the POS-tags from a sentence and returns it as a Tree, containing all Tags.
+     *
+     * @param tree - Tree, containingthe sentence to extract POS-tags from, represented as tree..
+     * @return - Tree, containing the POS-tags.
+     */
+    public Tree extractPOStags(Tree tree) {
+         return tree;
+    }
+
+
+
+    public String printPOSofSentence(String sentence){
+        Tree parsedSentence =  extractPOStags(sentence);
+        log.info("Sentence: " + sentence );
+
+        String tag = printPOSofSentence(parsedSentence);
+
+        log.info("Tagged Sentence: " + tag);
+        return tag;
+    }
+
+    public String printPOSofSentence(Tree treeSent){
+        log.info("Sentence: " + AnalysisUtilities.getCleanedUpYield(treeSent) );
+        String tag = "";
+        for (Tree word : treeSent.getLeaves()) {
+            tag += word.parent(treeSent.firstChild()).label().toString() + " ";
+        }
+
+        log.info("Tagged Sentence: " + tag);
+        return tag;
+    }
+
 
     public boolean checkSentenceRelevance(String sentence){
         return checkSentenceRelevance(extractPOStags(sentence));
