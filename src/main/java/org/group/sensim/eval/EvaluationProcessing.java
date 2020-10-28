@@ -5,6 +5,7 @@ import org.aksw.fox.binding.FoxResponse;
 import org.aksw.gerbil.transfer.nif.Document;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+//import org.group.sensim.CorefResolutor;
 import org.group.sensim.SentenceSimplifier;
 import org.group.sensim.eval.reader.NifReader;
 
@@ -35,12 +36,16 @@ public class EvaluationProcessing {
 
         EvaluationDataManager evalManager = new EvaluationDataManager();
         PrintWriter writer = new PrintWriter("results_Fox.txt", "UTF-8");
+       // CorefResolutor coref = new CorefResolutor();
 
         docs.forEach(basisDoc -> {
             try {
                 FoxResponse basisFoxResponse = processDocumentWithFox(basisDoc);
                 //evaluateNER(basisDoc, foxResponse, evalManager);
                 String simpleSentences = ss.simplifyFactualComplexSentence(basisDoc.getText());
+                System.out.println("SIMPLE SENTENCES: " + simpleSentences + "\n extracting coref...");
+              //  coref.getCoref(simpleSentences);
+
                 FoxResponse simplifiedFoxResponse = FoxBinding.sendRequest(simpleSentences);
 
 //                FoxBinding.printFormattedResponse(basisFoxResponse);

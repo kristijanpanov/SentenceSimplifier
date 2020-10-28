@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import edu.stanford.nlp.ling.*;
 import org.apache.commons.lang.StringUtils;
 
 
@@ -36,8 +37,6 @@ import net.didion.jwnl.data.IndexWord;
 import net.didion.jwnl.data.POS;
 import net.didion.jwnl.dictionary.Dictionary;
 
-import edu.stanford.nlp.ling.HasWord;
-import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.parser.lexparser.*;
 import edu.stanford.nlp.process.DocumentPreprocessor;
 import edu.stanford.nlp.trees.*;
@@ -47,6 +46,7 @@ import edu.stanford.nlp.trees.tregex.tsurgeon.Tsurgeon;
 import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
 import edu.stanford.nlp.util.Pair;
 
+import org.apache.jena.tdb.store.Hash;
 
 
 public class AnalysisUtilities {
@@ -76,6 +76,7 @@ public class AnalysisUtilities {
             ops.add(new Pair<TregexPattern,TsurgeonPattern>(matchPattern,p));
             Tsurgeon.processPatternsOnTree(ops, input);
         }
+
     }
 
     public static int getNumberOfMatchesInTree(String tregexExpression, Tree t){

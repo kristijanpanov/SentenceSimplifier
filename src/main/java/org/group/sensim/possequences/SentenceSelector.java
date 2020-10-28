@@ -34,31 +34,32 @@ public class SentenceSelector {
 
 
 
-    public static void main(String[] args){
-        //TODO for now testing simplification. In the future move this in mainApp.
-        SentenceSelector selector = new SentenceSelector();
-        SentenceTransformer sTransf = new SentenceTransformer();
-        SentenceSimplifier ss = SentenceSimplifier.getInstance();
-        //Map<Question, String> questionSentence = new HashMap<>();
-
-        String corpusFile = "./src/main/resources/datasets/PWKP_108016_SimpleComplexSentencesPair";
-        List<String> sentences = extractLinesFromFile(corpusFile);
-
-        NifReader nf = new NifReader();
-        String testFile = "./src/main/resources/eval/ReutersTest.ttl";
-        List<Document> docs = nf.readData(testFile);
-
-        docs.forEach(basisDoc -> {
-            Map<Question, String>  questionSentence = ss.simplifyFactualComplexSentenceAsTree(basisDoc.getText());
-                    for (Question q  : questionSentence.keySet()){
-                    //if sentence Relevant, then further processing.
-                    if (selector.isSentenceRelevant(q)){
-                        //further simplifications happen here. This method should return something :)
-                        sTransf.transformer(q.getIntermediateTree());
-                    }
-                }
-        });
-
+//    public static void main(String[] args) {
+//        //TODO for now testing simplification. In the future move this in mainApp.
+//        SentenceSelector selector = new SentenceSelector();
+//        SentenceTransformer sTransf = new SentenceTransformer();
+//        SentenceSimplifier ss = SentenceSimplifier.getInstance();
+//        //Map<Question, String> questionSentence = new HashMap<>();
+//
+//        String corpusFile = "./src/main/resources/datasets/PWKP_108016_SimpleComplexSentencesPair";
+//        List<String> sentences = extractLinesFromFile(corpusFile);
+//
+//        NifReader nf = new NifReader();
+//        String testFile = "./src/main/resources/eval/ReutersTest.ttl";
+//        List<Document> docs = nf.readData(testFile);
+//
+//        docs.forEach(basisDoc -> {
+//            Map<Question, String> questionSentence = ss.simplifyFactualComplexSentenceAsTree(basisDoc.getText());
+//            for (Question q : questionSentence.keySet()) {
+//                //if sentence Relevant, then further processing.
+//                if (selector.isSentenceRelevant(q)) {
+//                    //further simplifications happen here. This method should return something :)
+//                    sTransf.transformer(q.getIntermediateTree());
+//                }
+//            }
+//        });
+//
+//    }
 
 //        for (String sentence : sentences){
 //            if (sentence.length()>0) {
@@ -77,31 +78,15 @@ public class SentenceSelector {
 //        }
 
 
+
+
+    public static void main(String[] args) throws MalformedURLException, FileNotFoundException, UnsupportedEncodingException {
+        SentenceSimplifier ss = SentenceSimplifier.getInstance();
+
+        ss.simplifyFactualComplexSentenceAditional("Geographers study not only the physical details of the environment but also its impact on human and wildlife ecologies, weather and climate patterns, economics, and culture.");
+
+
     }
-
-
-//    public static void main(String[] args) throws MalformedURLException, FileNotFoundException, UnsupportedEncodingException {
-//        SentenceSelector selector = new SentenceSelector();
-//        //selector.isSentenceRelevant("Nicola Tesla is the all-time best scientist of the whole World.");
-//
-//        // -----> TODO 1. slegni datasets (newsela, wikismall/large), 2. iterate through them and select sentences as relevant/unrelevant.
-//        //TODO ... 2.1 simplify with HiS, then 2.2 mark as Relevant/notRelevant
-//        //TODO ... 2.0 simplify na drug nacin, 2.1. HiS (optional), 2.2. mark relevance
-//
-//        String corpusFile = "./src/main/resources/datasets/simpleWiki_.ori.test.dst";
-//        List<String> sentences = extractLinesFromFile(corpusFile);
-//        PrintWriter writer = new PrintWriter("resultsFox_RELEVANT_ONLY_simpleWiki.txt", "UTF-8");
-//
-//        for (String sentence : sentences){
-//            if( selector.isSentenceRelevant(sentence) ) {
-//                FoxResponse response = FoxBinding.sendRequest(sentence);
-//                //if(response.getEntities().size() > 0 ) {
-//                    printToFile(writer, response.toString());
-//                //}
-//            }
-//        }
-//        writer.close();
-//    }
 
     public static List<String> extractLinesFromFile(String file) {
         File testFile = new File(new File(file).getAbsolutePath());

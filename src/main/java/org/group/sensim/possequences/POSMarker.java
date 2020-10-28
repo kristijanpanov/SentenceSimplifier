@@ -12,12 +12,8 @@ import org.group.sensim.GlobalProperties;
 import org.group.sensim.ParseResult;
 import org.group.sensim.Question;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 public class POSMarker {
 
@@ -27,35 +23,111 @@ public class POSMarker {
     Pos tags, which may represent an entity.
     The list is created based on a tested data with marked entities.
      */
-    private final List<String> relevantPosTags;
+    private List<String> relevantPosTags;
 
     /*
     Pos tags, that are not considered as entity.
      */
-    private final List<String> excludedPosTags;
+    private List<String> excludedPosTags;
 
     public POSMarker() {
         //BasicConfigurator.configure();
         String propertiesFile = "src" + File.separator + "main" + File.separator + "resources" + File.separator + "factual-statement-extractor.properties";
         GlobalProperties.loadProperties(propertiesFile);
         excludedPosTags = initExcludedTags();
-        relevantPosTags = initRelevantTags();
+        relevantPosTags = initSavedRelevantTags();
+
+        if (relevantPosTags.size() < 2 ){
+             relevantPosTags = initDefaultRelevantTags();
+        }
+    }
+
+    public POSMarker(List<String> relevantPosTagsFiles) {
+        new POSMarker();
+        relevantPosTags = new ArrayList<String>();
+        relevantPosTags = initSavedRelevantTags(relevantPosTagsFiles);
+
+        if (relevantPosTags.size() < 2 ){
+            relevantPosTags = initDefaultRelevantTags();
+        }
     }
 
 
     private List<String> initExcludedTags() {
         List<String> excludedPosTags = new ArrayList<String>();
-        excludedPosTags.add("DT");
-        excludedPosTags.add("TO");
-        excludedPosTags.add("IN");
-        excludedPosTags.add("CC");
-        excludedPosTags.add("VBZ");
+//        excludedPosTags.add("DT");
+//        excludedPosTags.add("TO");
+//        excludedPosTags.add("IN");
+//        excludedPosTags.add("CC");
+//        excludedPosTags.add("VBZ");
+//        excludedPosTags.add(".");
+//        excludedPosTags.add("PRP");
+//        excludedPosTags.add("VB");
+
+        excludedPosTags.add("NNS");
+        excludedPosTags.add("NN");
+        excludedPosTags.add("TO NNS");
+        excludedPosTags.add("TO NN");
+        excludedPosTags.add("JJ");
         excludedPosTags.add(".");
-        excludedPosTags.add("PRP");
-        excludedPosTags.add("VB");
 
         return excludedPosTags;
     }
+
+
+    private List<String> initSavedRelevantTags( ) {
+
+        List<String> resourceFiles = new ArrayList<>();
+
+        //standard: Pointing to LOC, PERSON, ORG
+        // here define which files should be loaded the pos-sequences from
+        resourceFiles.add("./src/main/resources/possequences/marking_entityToPOS_RSS-50.txt");
+        resourceFiles.add("./src/main/resources/possequences/marking_entityToPOS_ReutersTes.txt");
+        resourceFiles.add("./src/main/resources/possequences/marking_entityToPOS_oke-challenge2018-trainin.txt");
+
+//        resourceFiles.add("./src/main/resources/possequences/marking_entityToPOS_dbpedia-spotlight-ni.txt");  //special case- different entity types.
+
+        return initSavedRelevantTags(resourceFiles);
+    }
+
+    /**
+     * Initialize relevant POS-tags: tags pointing to an entity, which were pre-saved with (POSEntityUpdator)
+     * The List was created after finding out which tags-point to an entity.
+     *
+     * @return List of POS-sequences as string, which point to an entity.
+     */
+    public List<String> initSavedRelevantTags(List<String> resourceFiles) {
+        List<String> relevantPosTags = new ArrayList<String>();
+
+        BufferedReader reader;
+        for ( String posSeqF : resourceFiles ) {
+            try {
+                log.info("Loading pre-saved POS-sequences from: " + posSeqF);
+                reader = new BufferedReader(new FileReader(
+                        posSeqF));
+                String posSeq = reader.readLine();
+
+                while (posSeq != null ) {
+                    //  posSeqReader
+                    posSeq = reader.readLine();
+                    if (!relevantPosTags.contains(posSeq) && posSeq != null){
+                        relevantPosTags.add(posSeq);
+                    }
+                }
+                reader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            log.info("POS-sequences from: " + posSeqF  + " have been loaded.");
+        }
+
+        for (String posS : relevantPosTags){
+            log.info("Relevant POStags: " + posS);
+        }
+
+        return relevantPosTags;
+    }
+
 
     /**
      * Initialize relevant POS-tags: tags pointing to an entity.
@@ -63,7 +135,7 @@ public class POSMarker {
      * The List may be extended.
      * @return
      */
-    private List<String> initRelevantTags() {
+    private List<String> initDefaultRelevantTags() {
         //TODO insert these in a document. The document should be updated after running the EntityPOSUpdator := POSApp
         List<String> relevantPosTags = new ArrayList<String>();
         relevantPosTags.add("NNP");
@@ -93,8 +165,6 @@ public class POSMarker {
          return tree;
     }
 
-
-
     public String printPOSofSentence(String sentence){
         Tree parsedSentence =  extractPOStags(sentence);
         log.info("Sentence: " + sentence );
@@ -123,15 +193,22 @@ public class POSMarker {
 
     public boolean checkSentenceRelevance(Tree posTree){
         Map<String, String> wordPos = mapWordPOS(posTree);
-        String posTag;
+        String sentencePosTags = "";
 
         for (String word : wordPos.keySet()) {
-            posTag = wordPos.get(word);
-            if (relevantPosTags.contains(posTag)) {
+            sentencePosTags += wordPos.get(word) + " ";
+        }
+        log.info("POS TAGS OF THE SENTENCE: " + sentencePosTags);
+        for (String posSeq : relevantPosTags){
+
+            if (sentencePosTags.contains(posSeq)) {
+                if (excludedPosTags.contains(posSeq)){
+                    continue;
+                }
+                log.info("POS-sequence match: " + posSeq);
                 return true;
             }
         }
-
         return false;
     }
 
@@ -151,13 +228,20 @@ public class POSMarker {
         String posTag;
         String entityPos = "";
         for (String entity : entities.values()) {
+            entityPos = "";
             for (String word : wordPos.keySet()) {
                 posTag = wordPos.get(word);
-                if (!excludedPosTags.contains(posTag))
+//                if (!excludedPosTags.contains(posTag))
                     if (entity.contains(word)) {
-                        entityPos = "The entity: [" + entity + "] contains (" + word + ") with the tag: " + wordPos.get(word);
-                        writer.println(entityPos);
-                    }
+//                        entityPos = "The entity: [" + entity + "] contains (" + word + ") with the tag: " + wordPos.get(word);
+//                        writer.println(entityPos);
+
+                        entityPos += wordPos.get(word) + " ";
+                  }
+            }
+            if (entityPos.length() > 0) {
+                writer.println(entityPos);
+                log.info("Writing POS-sequence: [" + entityPos + "]");
             }
         }
         return entityPos;

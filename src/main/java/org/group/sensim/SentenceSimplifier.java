@@ -35,6 +35,7 @@ import edu.stanford.nlp.trees.tregex.TregexPattern;
 import edu.stanford.nlp.trees.tregex.tsurgeon.Tsurgeon;
 import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
 import edu.stanford.nlp.util.Pair;
+import org.group.sensim.extendedrules.RuleProcess;
 
 /**
  * Class for extracting simplified factual statements from complex sentences.
@@ -262,6 +263,7 @@ public class SentenceSimplifier {
         extractAppositives(extracted, orig);
         extractVerbParticipialModifiers(extracted, orig);
         extractADJPs(extracted, orig);
+        extractNotOnlyBut(extracted, orig);
 
         //extractWITHPartcipialPhrases(extracted, orig); //too rare to worry about
         if(extractFromVerbComplements) extractComplementClauses(extracted, orig);
@@ -1476,6 +1478,70 @@ public class SentenceSimplifier {
         }
     }
 
+    /**
+     * If "not only... but..." is present in a sentence, then the sentence will be split.
+     *
+     * Examples:
+     * "This makes it not only easier to learn, but means it can be typed using a normal keyboard."
+     * --> This makes it easier to learn. This means it can be typed using a normal keyboard.
+     *
+     * "Serfdom developed in Eastern Europe after the Black Death epidemics, which not only stopped the migration but depopulated Western Europe.
+     * --> Serfdom developed in Eastern Europe after the Black Death epidemics, which stopped the migration.
+     * --> Serfdom developed in Eastern Europe after the Black Death epidemics, which depopulated Western Europe.
+     *
+     * @param extracted
+     * @param input
+     */
+    private void extractNotOnlyBut(List<Question> extracted, Question input) {
+        String tregexOpStr;
+        TregexPattern matchPattern;
+        TregexMatcher matcher;
+        Tree newTree;
+        // (ROOT (S (NP (DT The) (NN book)) (VP (VBZ is) (ADJP (JJ yellow) (CC and) (JJ old))) (. .)))
+        // (ROOT (S (NP (DT The) (NN book)) (VP (VBZ is) (ADJP (ADJP (RB very) (JJ yellow)) (CC and) (ADJP (RB pretty) (JJ old)))) (. .
+        // )))
+
+        // tregexOpStr = "CONJP|CC !< either|or|neither|nor > NP !>> SBAR "
+        //                    + " !> (NP < (/^(N.*|SBAR|PRP)$/ !$ /^(N.*|SBAR|PRP)$/))";
+
+        // tregexOpStr = "NP=parent < (CONJP|CC !< or|nor [ "
+        //                + " $+ /^(N.*|PRP|SBAR)$/=child $-- /^(N.*|PRP|SBAR)$/ | " //there must be a noun on each side of the conjunction
+        //                + " $-- /^(N.*|PRP|SBAR)$/=child $+ /^(N.*|PRP|SBAR)$/ ] ) " //this avoids extracting from flat NPs such as "the smaller and darker form"
+        //                + " !>> (/.*/ $ (CC|CONJP !< or|nor)) "  //this cannot be nested within a larger conjunction or followed by a conjunction (we recur later to catch this)
+        //                + " !$ (CC|CONJP !< or|nor)"
+        //                + " !.. (CC|CONJP !< or|nor > NP|PP|S|SBAR|VP) !>> SBAR ";
+
+        // tregexOpStr = "NP=np < (SBAR=sbar [ < (WHADVP=wherecomp < (WRB < where)) "
+        //                + " | < (WHNP !< /WP\\$/) "
+        //                + " | < (WHNP=possessive < /WP\\$/)"  //John, whose car was
+        //                + " | < (WHPP < IN|TO=preposition) ] $-- NP $- /,/ "
+        //                + " < S=relclause  !< WHADJP)";
+
+        // CONJP ( RB not ) ( RB only ) .... CONJP ( CC but )
+
+
+
+        tregexOpStr = "ROOT=root < (S=src < (NP=subj $++ (VP=verb << (ADJP=allAdjps" +
+                " [ < (JJ $++ JJ & $++ ( CC <# and|or ))" + //subject has two adjectives.
+                " | << (ADJP $++ ADJP & $++ (CC <# and ))]))))"; //has many adjectives divided with and
+
+
+
+        matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
+        matcher = matchPattern.matcher(input.getIntermediateTree());
+
+        if(matcher.find()) {
+            Tree rootTree = matcher.getNode("root").deeperCopy();
+            Tree inputTree = matcher.getNode("root").deeperCopy(); //input.getIntermediateTree();
+            Tree sourceTree = matcher.getNode("src").deeperCopy();
+            Tree subjectTree = matcher.getNode("subj").deeperCopy();
+            Tree verbPhraseTree = matcher.getNode("verb");
+            Tree allAdjp = matcher.getNode("allAdjps");
+
+        }
+
+    }
+
 
 
     public void setBreakNPs(boolean breakNPs) {
@@ -1681,6 +1747,27 @@ public class SentenceSimplifier {
         return sentences;
     }
 
+
+    public List<String> simplifyFactualComplexSentenceAditional(String doc) {
+        List<String> sentences = new ArrayList<String>();
+
+        Map<Question, String> questionSentence = new HashMap<>();
+        questionSentence = simplifyFactualComplexSentenceAsTree(doc);
+
+        for (Question q : questionSentence.keySet()) {
+            String sent = questionSentence.get(q);
+
+            //add sentence if result list is not empty
+            System.out.println( RuleProcess.splitNotOnlyBut(q, sent));
+
+            sentences.add(sent);
+        }
+
+
+        return sentences;
+    }
+
+
     /**
      * Simplifies complex sentences into more one-factual sentences and returns them back as a Qustion(containing a parsed Tree) and as a String.
      *
@@ -1722,6 +1809,7 @@ public class SentenceSimplifier {
 
         return questionSentence;
     }
+
 
 
     public void setMainClauseOnly(boolean b) {
