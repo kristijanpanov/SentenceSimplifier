@@ -11,10 +11,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class NifReader {
@@ -133,7 +130,7 @@ public class NifReader {
      * Creates a HashMap of Entity name with its' starting position in the document.
      *
      * @param doc - the Document from which the entities will be extracted.
-     * @return Map<String,Integer> - Key:=Entity, Value:=Starting position
+     * @return Map<String,Integer> - Key:=Starting position, Value:=Entity
      */
     public static Map<Integer, String> getEntities(Document doc){
         Map<Integer, String> entityMap = new HashMap<Integer, String>();
@@ -151,6 +148,46 @@ public class NifReader {
         }
 
         return entityMap;
+    }
+
+    /**
+     * Returns all entity URLs found in the document.
+     *
+     * @param doc - the Document from which the entities will be extracted.
+     * @return Set<String> - set of URLs of entities.
+     */
+    public static Set<String> getEntityURLs(Document doc){
+        log.info(doc.getMarkings().size() + " Entities has been found in document with URI: " + doc.getDocumentURI());
+        Set<String> uniqueURLs = new HashSet<String>();
+        for (Marking marking : doc.getMarkings()) {
+            if (!(marking instanceof NamedEntity)) {
+                continue;
+            }
+            final NamedEntity ne = (NamedEntity) marking;
+            uniqueURLs.addAll(ne.getUris());
+        }
+        return uniqueURLs;
+    }
+
+    /**
+     * Returns all entity words found in the document.
+     *
+     * @param doc - the Document from which the entities will be extracted.
+     * @return Set<String> - set of entity words.
+     */
+    public static Set<String> getEntityWords(Document doc){
+        log.info(doc.getMarkings().size() + " Entities has been found in document with URI: " + doc.getDocumentURI());
+        Set<String> uniqueWords = new HashSet<String>();
+        for (Marking marking : doc.getMarkings()) {
+            if (!(marking instanceof NamedEntity)) {
+                continue;
+            }
+            final NamedEntity ne = (NamedEntity) marking;
+            final String word = doc.getText().substring(ne.getStartPosition(), ne.getStartPosition() + ne.getLength());
+            log.info("Adding word [" + word + "] into the Set of entities");
+            uniqueWords.add(word);
+        }
+        return uniqueWords;
     }
 
 

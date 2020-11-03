@@ -22,7 +22,13 @@
         <artifactId>gerbil.nif.transfer</artifactId>
         <version>1.2.6-jena3.1-SNAPSHOT</version>
     </dependency>
-</dependencies>
+        <dependency>
+            <groupId>org.group</groupId>
+            <artifactId>sentence-simplifier</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
     <repositories>
     <repository>

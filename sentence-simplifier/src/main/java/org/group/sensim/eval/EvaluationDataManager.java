@@ -3,9 +3,8 @@ package org.group.sensim.eval;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-
 /**
- * This class serves as organizing and saving the results from the evaluation.
+ * This class serves as organizing and printing the results from the evaluation.
  */
 public class EvaluationDataManager {
     /* True positive variable */
@@ -14,11 +13,14 @@ public class EvaluationDataManager {
     private int fp;
     /* False negative variable */
     private int fn;
+    /* False negative variable */
+    private int tn;
 
     public EvaluationDataManager(){
         this.tp = 0;
         this.fp = 0;
         this.fn = 0;
+        this.tn = 0;
     }
     /* Scenario TP: basisDocument --> NER, FOX ---> NER */
     /* Scenario FP: basisDocument --> no NER, FOX ---> NER */
@@ -46,6 +48,12 @@ public class EvaluationDataManager {
         this.fn++;
     }
 
+    /**
+     * Increases false-negative counter by 1.
+     * (used only to print)
+     */
+    public void incrementTN() { this.tn++; }
+
     private BigDecimal calculatePrecision(){
         BigDecimal tpBig = BigDecimal.valueOf(this.tp);
         BigDecimal fpBig = BigDecimal.valueOf(this.fp);
@@ -70,7 +78,7 @@ public class EvaluationDataManager {
         BigDecimal sumPR = p.add(r);
         BigDecimal two = new BigDecimal("2.0");
         BigDecimal f1score = two.multiply(p).multiply(r)
-                            .divide(sumPR, new MathContext(4, RoundingMode.HALF_UP));
+                .divide(sumPR, new MathContext(4, RoundingMode.HALF_UP));
         return f1score;
     }
 
@@ -80,6 +88,7 @@ public class EvaluationDataManager {
         System.out.println("---> TP: " + this.tp);
         System.out.println("---> FP: " + this.fp);
         System.out.println("---> FN: " + this.fn);
+        System.out.println("---> TN: " + this.tn);
         System.out.println();
         System.out.println("Precision: " + calculatePrecision());
         System.out.println("Recall:    " + calculateRecall());

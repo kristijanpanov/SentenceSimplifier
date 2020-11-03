@@ -29,6 +29,7 @@ import edu.stanford.nlp.trees.tregex.TregexPattern;
 import edu.stanford.nlp.trees.tregex.tsurgeon.Tsurgeon;
 import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
 import edu.stanford.nlp.util.Pair;
+import org.group.sensim.extendedrules.RuleProcess;
 //import org.group.sensim.org.group.sensim.extendedrules.RuleProcess;
 
 import java.io.BufferedReader;
@@ -1746,7 +1747,12 @@ public class SentenceSimplifier {
         return sentences;
     }
 
-
+    /**
+     * Simplifies complex sentences into more one-factual sentences and returns them back as a List of sentences (strings).
+     * Additional rules are applied, such as 'splitting not-only-but structures'.
+     *
+     * @param doc - the text to be simplified
+     */
     public List<String> simplifyFactualComplexSentenceAditional(String doc) {
         List<String> sentences = new ArrayList<String>();
 
@@ -1757,22 +1763,25 @@ public class SentenceSimplifier {
             String sent = questionSentence.get(q);
 
             //add sentence if result list is not empty
-            System.out.println( RuleProcess.splitNotOnlyBut(q, sent));
+            List<String> simplifiedSentences = RuleProcess.splitNotOnlyButAlso(q, sent);
 
-            sentences.add(sent);
+            if (simplifiedSentences.size() > 0) {
+                sentences.addAll(simplifiedSentences);
+            } else {
+                sentences.add(sent);
+            }
+            simplifiedSentences.forEach(System.out::println);
         }
-
 
         return sentences;
     }
 
 
     /**
-     * Simplifies complex sentences into more one-factual sentences and returns them back as a Qustion(containing a parsed Tree) and as a String.
+     * Simplifies complex sentences into more one-factual sentences and returns them back as a Question(containing a parsed Tree) and as a String.
      *
      * @param doc - the text to be simplified
      */
-
     public Map<Question, String> simplifyFactualComplexSentenceAsTree(String doc) {
         Map<Question, String> questionSentence = new HashMap<>();
 

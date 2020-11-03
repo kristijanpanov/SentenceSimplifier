@@ -35,7 +35,6 @@ public class EvaluationSequenceSelector {
         //Evaluation_2: Take the results from FOX as basis (assume correct), instead of gerbil-annotated resources.
         processFirstEvaluationBasedOnFOX();
 
-
     }
 
     /**

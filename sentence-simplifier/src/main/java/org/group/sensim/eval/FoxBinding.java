@@ -8,6 +8,8 @@ import org.aksw.fox.data.Entity;
 import org.aksw.fox.data.RelationSimple;
 import org.aksw.gerbil.io.nif.impl.TurtleNIFParser;
 import org.aksw.gerbil.transfer.nif.Document;
+import org.aksw.gerbil.transfer.nif.Marking;
+import org.aksw.gerbil.transfer.nif.data.NamedEntity;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -16,10 +18,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class FoxBinding {
@@ -72,12 +71,12 @@ public class FoxBinding {
         List<Entity> entities = response.getEntities();
         List<RelationSimple> relations = response.getRelations();
 
-        LOG.info("Iterating through entities: ----> [" + entities.size() + "]");
+        LOG.info("Iterating through FOX entities: ----> [" + entities.size() + "]");
         for (Entity e : entities) {
             LOG.info("Entity: [" + e.getText() + "] - start position: " + e.getIndices() + " -  URI: " + e.getUri());
         }
 
-        LOG.info("Iterating through relations: ----> [" + relations.size() + "]");
+        LOG.info("Iterating through FOX relations: ----> [" + relations.size() + "]");
         for (RelationSimple rel : relations) {
             LOG.info(rel);
         }
@@ -109,6 +108,44 @@ public class FoxBinding {
         return entityMap;
     }
 
+    /**
+     * Returns all entity URLs found in the response.
+     *
+     * @param foxResponse -  the FoxResponse from which the entities will be extracted.
+     * @return Set<String> - set of URLs of entities.
+     */
+    public static Set<String> getEntityURLs(FoxResponse foxResponse){
+        LOG.info(foxResponse.getEntities().size() + " Entities has been found in the FOX response.");
+
+        List<Entity> entities = foxResponse.getEntities();
+        Set<String> uniqueURLs = new HashSet<String>();
+
+        for (Entity e : entities) {
+            uniqueURLs.add(e.getUri());
+        }
+
+        return uniqueURLs;
+    }
+
+    /**
+     * Returns all entity words found in the response.
+     *
+     * @param foxResponse -  the FoxResponse from which the entities will be extracted.
+     * @return Set<String> - set of entity words.
+     */
+    public static Set<String> getEntityWord(FoxResponse foxResponse) {
+
+        List<Entity> entities = foxResponse.getEntities();
+        LOG.info(entities.size() + " Entities has been found in the FOX response.");
+
+        Set<String> uniqueWords = new HashSet<String>();
+
+        for (Entity e : entities) {
+            uniqueWords.add(e.getText());
+        }
+
+        return uniqueWords;
+    }
 
     /**
      * Uses the Turtle-Nif Parser, parses the response and saves it into a list of Documents.
