@@ -5,8 +5,11 @@ import org.aksw.gerbil.io.nif.impl.TurtleNIFParser;
 import org.aksw.gerbil.transfer.nif.Document;
 import org.aksw.gerbil.transfer.nif.Marking;
 import org.aksw.gerbil.transfer.nif.data.NamedEntity;
+import org.aksw.gerbil.transfer.nif.data.RelationImpl;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.group.sensim.eval.Triple;
 
 import java.io.File;
 import java.io.IOException;
@@ -125,6 +128,56 @@ public class NifReader {
             log.info(String.format("%d . %-73s| NER: [%s]}", entityCounter, ne, word));
         }
     }
+
+    /**
+     * Prints single document to the console and
+     *
+     * @param doc - the parsed nif document to be printed.
+     */
+    public static void printNifDocumentRelations(Document doc) {
+        log.info("Text:\n" + doc.getText());
+        log.info("Searching for predicates/relations in document with URI: " + doc.getDocumentURI());
+
+        for (Marking marking : doc.getMarkings()) {
+            if (!(marking instanceof RelationImpl)) {
+                continue;
+            }
+            final RelationImpl rel = (RelationImpl) marking;
+            log.info("Triple [nif-subj: " + rel.getSubject().toString() + ", nif-pred: " + rel.getPredicate().toString() + ", nif-obj: " +  rel.getObject().toString() + "]");
+         }
+    }
+
+    /**
+     * Extracts the relations from a document and adds them  into a List of triples <s,p,o>.
+     *
+     * @param doc - the document to extract relations from.
+     * @return List<Triple> list of extracted triples. Empty list, if no relations are present.
+     */
+    public static List<Triple> extractTriples(Document doc) {
+        List<Triple> nifTriples = new ArrayList<>();
+        String subj = "";
+        String pred = "";
+        String obj = "";
+
+        for (Marking marking : doc.getMarkings()) {
+            if (!(marking instanceof RelationImpl)) {
+                continue;
+            }
+
+            final RelationImpl rel = (RelationImpl) marking;
+
+            subj = rel.getSubject().toString().substring(rel.getSubject().toString().indexOf("uri=[")+5, rel.getSubject().toString().length() - 2);
+            pred = rel.getPredicate().toString().substring(rel.getPredicate().toString().indexOf("uri=[")+5, rel.getPredicate().toString().length() - 2);
+            obj = rel.getObject().toString().substring(rel.getObject().toString().indexOf("uri=[")+5, rel.getObject().toString().length() - 2);
+            log.info("extracting Triple: [nif-subj: " + subj + ", nif-pred: " + pred + ", nif-obj: " + obj + "]");
+
+            nifTriples.add(new Triple(subj, pred, obj));
+        }
+
+        return nifTriples;
+    }
+
+
 
     /**
      * Creates a HashMap of Entity name with its' starting position in the document.

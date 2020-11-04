@@ -1380,4 +1380,13 @@ public class TestSentenceSimplifier extends TestCase{
                 || setContainsTreeWithYield(res, "James won with John helping him."));
     }
 
+//    public void testAdditionalCase() {
+//        String sentence;
+//        Tree parse;
+//        Collection<Question> res;
+//
+//        sentence = "In June 323 BC, Alexander the Great died in Babylon aged 32, having conquered an empire stretching from modern Albania to eastern Pakistan.";
+//        parse = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
+//        res = simp.simplify(parse);
+//    }
 }

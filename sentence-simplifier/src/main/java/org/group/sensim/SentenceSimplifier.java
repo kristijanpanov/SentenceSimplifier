@@ -29,13 +29,17 @@ import edu.stanford.nlp.trees.tregex.TregexPattern;
 import edu.stanford.nlp.trees.tregex.tsurgeon.Tsurgeon;
 import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
 import edu.stanford.nlp.util.Pair;
+import org.apache.commons.lang3.StringUtils;
 import org.group.sensim.extendedrules.RuleProcess;
+import org.jetbrains.annotations.NotNull;
 //import org.group.sensim.org.group.sensim.extendedrules.RuleProcess;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Class for extracting simplified factual statements from complex sentences.
@@ -707,7 +711,27 @@ public class SentenceSimplifier {
             int verbIndex = p.indexOf(verb);
             p.removeChild(verbIndex);
             p.addChild(verbIndex, AnalysisUtilities.getInstance().readTreeFromString("("+verbPOS+" "+newVerb+")"));
-            String treeStr = "(ROOT (S "+matcher.getNode("subj").toString()+" "+p.toString()+" (. .)))";
+
+            Tree subj = matcher.getNode("subj");
+//            System.out.println("SUBJ YIELD: " + subj.yield());
+//            System.out.println("children as list: " + subj.parent(input.getIntermediateTree()).getChildrenAsList());
+//            System.out.println("first child label: " + subj.parent(input.getIntermediateTree()).getChildrenAsList().get(0).label()); //ADVP
+//            System.out.println("first child label: " + subj.parent(input.getIntermediateTree()).getChildrenAsList().get(0).getChildrenAsList().get(0).label()); //nnp
+
+
+            //looking for first sibling of 'subj' and checking if it contains NNP
+            if (subj.parent(input.getIntermediateTree()).getChildrenAsList().size() > 0) {
+                Tree possiblePreSubj = subj.parent(input.getIntermediateTree()).getChildrenAsList().get(0);
+                if (possiblePreSubj.label().toString().equals("ADVP")) {
+                    if (possiblePreSubj.getChildrenAsList().size() > 0) {
+                        if (possiblePreSubj.getChildrenAsList().get(0).label().toString().equals("NNP")) {
+                            subj.addChild(0, possiblePreSubj.getChildrenAsList().get(0));
+                        }
+                    }
+                }
+            }
+
+            String treeStr = "(ROOT (S " + subj.toString() + " " + p.toString() + " (. .)))";
             Tree newTree = AnalysisUtilities.getInstance().readTreeFromString(treeStr);
             correctTense(newTree.getChild(0).getChild(0), newTree.getChild(0));
 
@@ -1762,6 +1786,8 @@ public class SentenceSimplifier {
         for (Question q : questionSentence.keySet()) {
             String sent = questionSentence.get(q);
 
+            sent = normalizePunctuation(sent); //U. S. Th
+
             //add sentence if result list is not empty
             List<String> simplifiedSentences = RuleProcess.splitNotOnlyButAlso(q, sent);
 
@@ -1775,6 +1801,41 @@ public class SentenceSimplifier {
 
         return sentences;
     }
+
+    /**
+     * Normalizes empty space after punctuation.
+     * E.g. "...into the U.S.The company..." --> "into the U.S. The company has..."
+     *
+     * @param sent the sentence to look within it.
+     * @return normalized emtpy space after punctuation in a sentence
+     */
+    private String normalizePunctuation(String sent) {
+        sent = StringUtils.normalizeSpace(sent)
+                .replace(" .", ".")
+                .replace(". ", ".")
+                .replace(" ,", ",");
+
+        Pattern pattern = Pattern.compile("[A-Z]\\.[A-Z][a-z]");
+        Matcher match = pattern.matcher(sent);
+
+        while (match.find()) {
+            String substring = sent.substring(match.start(), match.end() - 1);
+            sent = sent.substring(0, match.start() + 2) + " " + sent.substring(match.start() + 2);
+            //System.out.println("eddited sentence; " + sent);
+        }
+
+        pattern = Pattern.compile("[A-Z]\\.[a-z]");
+        match = pattern.matcher(sent);
+
+        while (match.find()) {
+            String substring = sent.substring(match.start(), match.end() - 1);
+            sent = sent.substring(0, match.start() + 2) + " " + sent.substring(match.start() + 2);
+            //System.out.println("eddited sentence; " + sent);
+        }
+
+        return sent;
+    }
+
 
 
     /**
