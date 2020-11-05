@@ -8,21 +8,21 @@ import org.aksw.gerbil.transfer.nif.Document;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.group.sensim.SentenceSimplifier;
+import org.group.sensim.eval.reader.JsonReader;
 import org.group.sensim.eval.reader.NifReader;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 
 public class EvaluationProcessing {
     private static final Log log = LogFactory.getLog(EvaluationProcessing.class);
 
     //Used for testing small amounts of processed files.
-    final static int processNumberDocs = 22222;
+    final static int processNumberDocs = 101;
     static int counterProcessedDocs = 0;
 
     public EvaluationProcessing(){
@@ -32,7 +32,10 @@ public class EvaluationProcessing {
         EvaluationProcessing ep = new EvaluationProcessing();
 
         //ep.evaluationEntitites();
-        ep.evaluationRelationExtraction();
+
+        //ep.evaluationRelationExtractionNif();
+        ep.evaluationRelationExtractionJson();
+
     }
 
     /**
@@ -58,7 +61,7 @@ public class EvaluationProcessing {
         //3. compare Entities: basis x selected+simplified-FOX
     }
 
-    private void evaluationRelationExtraction() {
+    private void evaluationRelationExtractionNif() {
         NifReader nf = new NifReader();
         List<String> testFiles = new ArrayList<>();
         testFiles.add("./src/main/resources/eval/oke-challenge-2018-relation.ttl");
@@ -66,10 +69,27 @@ public class EvaluationProcessing {
         for (String testFile : testFiles) {
             List<Document> docs = nf.readData(testFile);
             //compareRelationBasisWithFOXoriginal(docs);
-            compareRelationBasisWithFOXsimplified(docs);
+            //compareRelationBasisWithFOXsimplified(docs);
         }
-
     }
+
+    private void evaluationRelationExtractionJson() {
+        JsonReader jsonReader = new JsonReader();
+        List<String> testFiles = new ArrayList<>();
+        testFiles.add("./src/main/resources/eval/20130403-place_of_birth.json");
+        Map<String, Boolean> textRelevanceMap = new HashMap<>();
+
+        for (String testFile : testFiles) {
+            try {
+                textRelevanceMap =  jsonReader.extractSnippetsWithRelevance(testFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //compareRelationJSONBasisWithFOXoriginal(textRelevanceMap);
+            compareRelationJSONBasisWithFOXsimplified(textRelevanceMap);
+        }
+    }
+
 
 
     private void compareEntityBasisWithFOXoriginal(List<Document> docs) {
@@ -179,10 +199,8 @@ public class EvaluationProcessing {
         log.info("<--------- comparing basisDoc with foxResponseDoc");
 
         counterProcessedDocs++;
-
         if(processNumberDocs <= counterProcessedDocs) {
             evalManager.printResults();
-
             System.exit(1); //process only the first document... //TODO remove this one.
         }
     }
@@ -249,10 +267,71 @@ public class EvaluationProcessing {
                 evalManager.incrementFN();
             }
         }
-
-
     }
 
+
+    private void compareRelationJSONBasisWithFOXoriginal(Map<String, Boolean> textRelevanceMap) {
+        log.info("Starting evaluation relation-extraction JSON: [ basis : fox-original ]");
+        EvaluationDataManager evalManagerBasisOriginal = new EvaluationDataManager();
+
+        for (String text : textRelevanceMap.keySet()){
+            try {
+                FoxResponse basisFoxResponse = FoxBinding.sendRequest(text);
+                evaluateJSONRelationExtraction(basisFoxResponse, evalManagerBasisOriginal, textRelevanceMap.get(text));
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+        evalManagerBasisOriginal.printResults();
+        log.info("End of evaluation relation-extraction JSON: [ basis : fox-original ]");
+    }
+
+    private void compareRelationJSONBasisWithFOXsimplified(Map<String, Boolean> textRelevanceMap) {
+        log.info("Starting evaluation relation-extraction JSON: [ basis : fox-simplified ]");
+        EvaluationDataManager evalManagerBasisOriginal = new EvaluationDataManager();
+        SentenceSimplifier ss = SentenceSimplifier.getInstance();
+
+        for (String text : textRelevanceMap.keySet()){
+            try {
+                String simpleSentences = String.join(" ", ss.simplifyFactualComplexSentenceAditional(text));
+                FoxResponse basisFoxResponse = FoxBinding.sendRequest(simpleSentences);
+                evaluateJSONRelationExtraction(basisFoxResponse, evalManagerBasisOriginal, textRelevanceMap.get(text));
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+        evalManagerBasisOriginal.printResults();
+        log.info("End of evaluation relation-extraction JSON: [ basis : fox-simplified ]");
+    }
+
+    private void evaluateJSONRelationExtraction(FoxResponse foxResponse, EvaluationDataManager evalManagerBasisOriginal, Boolean relationPresentInBase) {
+        List<Triple> foxOrgTriples = extractFoxTriples(foxResponse);
+        FoxBinding.printFormattedResponse(foxResponse);
+
+        //has fox found a relation
+        if (foxOrgTriples.size()>0){
+            if (relationPresentInBase){
+                log.info("TP <---- fox found a relation and relation present in base.");
+                evalManagerBasisOriginal.incrementTP();
+            }
+            else{
+                log.info("FP <---- fox found a relation and relation is not present in base.");
+                evalManagerBasisOriginal.incrementFP();
+            }
+        }
+        else{
+            if (relationPresentInBase){
+                log.info("FN <---- fox did not find a relatio, but relation present in base.");
+                evalManagerBasisOriginal.incrementFN();
+            }
+        }
+
+        counterProcessedDocs++;
+        if(processNumberDocs <= counterProcessedDocs) {
+            evalManagerBasisOriginal.printResults();
+            System.exit(1); //process only the first few documents...
+        }
+    }
     private List<Triple> extractFoxTriples(FoxResponse foxResponse) {
         List<Triple> foxTriples = new ArrayList<>();
         String subj;
