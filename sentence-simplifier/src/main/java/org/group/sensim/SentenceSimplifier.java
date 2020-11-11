@@ -720,16 +720,16 @@ public class SentenceSimplifier {
 
 
             //looking for first sibling of 'subj' and checking if it contains NNP
-            if (subj.parent(input.getIntermediateTree()).getChildrenAsList().size() > 0) {
-                Tree possiblePreSubj = subj.parent(input.getIntermediateTree()).getChildrenAsList().get(0);
-                if (possiblePreSubj.label().toString().equals("ADVP")) {
-                    if (possiblePreSubj.getChildrenAsList().size() > 0) {
-                        if (possiblePreSubj.getChildrenAsList().get(0).label().toString().equals("NNP")) {
-                            subj.addChild(0, possiblePreSubj.getChildrenAsList().get(0));
-                        }
-                    }
-                }
-            }
+//            if (subj.parent(input.getIntermediateTree()).getChildrenAsList().size() > 0) {
+//                Tree possiblePreSubj = subj.parent(input.getIntermediateTree()).getChildrenAsList().get(0);
+//                if (possiblePreSubj.label().toString().equals("ADVP")) {
+//                    if (possiblePreSubj.getChildrenAsList().size() > 0) {
+//                        if (possiblePreSubj.getChildrenAsList().get(0).label().toString().equals("NNP")) {
+//                            subj.addChild(0, possiblePreSubj.getChildrenAsList().get(0));
+//                        }
+//                    }
+//                }
+//            }
 
             String treeStr = "(ROOT (S " + subj.toString() + " " + p.toString() + " (. .)))";
             Tree newTree = AnalysisUtilities.getInstance().readTreeFromString(treeStr);
@@ -1786,7 +1786,8 @@ public class SentenceSimplifier {
         for (Question q : questionSentence.keySet()) {
             String sent = questionSentence.get(q);
 
-            sent = normalizePunctuation(sent); //U. S. Th
+            //U. S. The new sentence... --> U.S. The new sentence...
+            sent = normalizePunctuation(sent);
 
             //add sentence if result list is not empty
             List<String> simplifiedSentences = RuleProcess.splitNotOnlyButAlso(q, sent);
@@ -1796,9 +1797,16 @@ public class SentenceSimplifier {
             } else {
                 sentences.add(sent);
             }
-            simplifiedSentences.forEach(System.out::println);
+            //sentences.add(sent);
         }
 
+        //could not be simplified, return original input
+        if (sentences.size()==0){
+            sentences.add(doc);
+        }
+
+        System.out.println("Returning: \n");
+        sentences.forEach(System.out::println);
         return sentences;
     }
 
@@ -1818,19 +1826,38 @@ public class SentenceSimplifier {
         Pattern pattern = Pattern.compile("[A-Z]\\.[A-Z][a-z]");
         Matcher match = pattern.matcher(sent);
 
+        int i = 0;
         while (match.find()) {
-            String substring = sent.substring(match.start(), match.end() - 1);
-            sent = sent.substring(0, match.start() + 2) + " " + sent.substring(match.start() + 2);
-            //System.out.println("eddited sentence; " + sent);
+            sent = sent.substring(0, match.start() + 2 + i) + " " + sent.substring(match.start() + 2 + i);
+            i++;
         }
 
         pattern = Pattern.compile("[A-Z]\\.[a-z]");
         match = pattern.matcher(sent);
 
+        i = 0;
         while (match.find()) {
-            String substring = sent.substring(match.start(), match.end() - 1);
-            sent = sent.substring(0, match.start() + 2) + " " + sent.substring(match.start() + 2);
-            //System.out.println("eddited sentence; " + sent);
+            sent = sent.substring(0, match.start() + 2 + i) + " " + sent.substring(match.start() + 2 + i);
+            i++;
+        }
+
+        //case: Alex.Brown --> Alex. Brown Inc
+        pattern = Pattern.compile("[a-z]\\.[A-Z][a-z]");
+        match = pattern.matcher(sent);
+        i = 0;
+        while (match.find()) {
+            sent = sent.substring(0, match.start() + 2 + i) + " " + sent.substring(match.start() + 2 + i);
+            i++;
+        }
+
+        //case A U.K. Agreement with the U.S .Securities and Exchange --> U.S. Securities
+        pattern = Pattern.compile("[a-z]\\.[A-Z][a-z]");
+        match = pattern.matcher(sent);
+
+        i = 0;
+        while (match.find()) {
+            sent = sent.substring(0, match.start() + 2 + i) + " " + sent.substring(match.start() + 2 + i);
+            i++;
         }
 
         return sent;
@@ -1853,28 +1880,33 @@ public class SentenceSimplifier {
         List<String> sentences = AnalysisUtilities.getSentences(doc);
         //iterate over each segmented sentence and generate one-factual sentences
         List<Question> output = new ArrayList<>();
+        List<String> sentencesNotSimplified = new ArrayList<>();
+
         for (String sentence : sentences) {
             parsed = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
             if (GlobalProperties.getDebug()) System.err.println("input: " + parsed.yield().toString());
             if (GlobalProperties.getDebug()) System.err.println("parse: " + sentence);
             //if no parse, print the original sentence
             if (parsed.yield().toString().equals(".")) {
-                System.out.print(sentence);
+                //System.out.print(sentence);
+                sentencesNotSimplified.add(sentence);
                 continue;
             }
             output.clear();
             output.addAll(ss.simplify(parsed));
-
             for (Question q : output) {
                 String simSen = AnalysisUtilities.getCleanedUpYield(q.getIntermediateTree());
-                System.out.println(simSen);
-                //System.out.println(q.findLogicalWordsAboveIntermediateTree());
+                //System.out.println(simSen);
                 questionSentence.put(q, simSen);
             }
         }
 
+        for (String notSimplfied : sentencesNotSimplified) {
+            Question qNotSimplf = new Question();
+            questionSentence.put(qNotSimplf, notSimplfied);
+        }
+
         System.out.println("Seconds Elapsed:\t" + ((System.currentTimeMillis() - startTime) / 1000.0));
-        System.out.println("Returning:\t" + simpleSentences);
 
         return questionSentence;
     }

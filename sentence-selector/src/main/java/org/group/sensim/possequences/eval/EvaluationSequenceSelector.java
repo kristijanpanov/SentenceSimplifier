@@ -27,13 +27,14 @@ public class EvaluationSequenceSelector {
 
     public static void main(String[] args) {
         //Evaluation_1: 3 combinations in order to perform 'leave-one-out cross' validation. Terbil-annotated resources
-        //     processFirstLeaveOneOutCrossValidation();
-        //     processSecondLeaveOneOutCrossValidation();
-        //     processThirdLeaveOneOutCrossValidation();
-        // processAdditional...()
+//             processFirstLeaveOneOutCrossValidation();
+//             processSecondLeaveOneOutCrossValidation();
+//             processThirdLeaveOneOutCrossValidation();
+        processAdditionalLeaveOneOutCrossValidation();
 
         //Evaluation_2: Take the results from FOX as basis (assume correct), instead of gerbil-annotated resources.
-        processFirstEvaluationBasedOnFOX();
+        //processFirstEvaluationBasedOnFOX();
+
 
     }
 
@@ -72,7 +73,6 @@ public class EvaluationSequenceSelector {
         posTagsFiles.add("./src/main/resources/possequences/marking_entityToPOS_oke-challenge2018-trainin.txt");
 
         POSMarker posMarker = new POSMarker(posTagsFiles);
-
         //initialize test-ttl file
         List<String> testTtlFile = new ArrayList<>();
         testTtlFile.add("./src/main/resources/eval/ReutersTest.ttl");
@@ -120,8 +120,8 @@ public class EvaluationSequenceSelector {
 
         //initialize test-ttl file
         List<String> testTtlFile = new ArrayList<>();
-        //testTtlFile.add("./src/main/resources/eval/RSS-500.ttl");
-        testTtlFile.add("./src/main/resources/eval/dbpedia-spotlight-nif.ttl");
+        testTtlFile.add("./src/main/resources/eval/ReutersTest.ttl");
+        //testTtlFile.add("./src/main/resources/eval/dbpedia-spotlight-nif.ttl");
 
         processEvaluation(posMarker, testTtlFile);
     }
@@ -155,6 +155,7 @@ public class EvaluationSequenceSelector {
                     //it should be relevant --> TP
                     if (entities.keySet().size() > 0) {
                         evalDataMgr.incrementTP();
+
                     }
                     //it should not be relevant --> FP
                     else {
@@ -164,8 +165,8 @@ public class EvaluationSequenceSelector {
                     //it should be relevant --> FN
                     if (entities.keySet().size() > 0) {
                         evalDataMgr.incrementFN();
+                        log.info("Increasing FN : Because the entities are contained: " + entities);
                     }
-
                     //it should not be relevant --> FP // not interesting case.
                 }
             });

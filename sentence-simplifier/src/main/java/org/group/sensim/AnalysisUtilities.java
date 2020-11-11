@@ -317,6 +317,8 @@ public class AnalysisUtilities {
             }
         }
 
+        //TODO add here a workaround (ili u "glavnata-metoda")
+        //zemi drug parser, ponov. Podeli gi recenicite (so tocka) i prati mu gi na stario parser.. da mu olesnas rabotata.
         try{
             if(parser.parse(sentence)){
                 parse = parser.getBestParse();

@@ -21,12 +21,13 @@ public class JsonReader {
     public static void main(String[] args) throws IOException, ParseException {
 
         JsonReader jreader = new JsonReader();
-        jreader.extractSnippetsWithRelevance("./src/main/resources/eval/20130403-place_of_birth.json");
+        jreader.extractSnippetsWithRelevance("./src/main/resources/eval/20130403-place_of_birth_500.json");
 
     }
 
     /**
-     * Processes the filePath and returns the text from the file and its relevance (boolean of judgments for relation presence).
+     * Processes the filePath and returns the text from the file and its relevance.
+     * Relevance:= boolean value of majority judgments for presence of the correspondent relation.
      *
      * @param pathJsonFile
      * @return

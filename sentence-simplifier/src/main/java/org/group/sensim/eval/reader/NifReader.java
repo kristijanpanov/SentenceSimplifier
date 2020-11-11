@@ -237,9 +237,9 @@ public class NifReader {
             }
             final NamedEntity ne = (NamedEntity) marking;
             final String word = doc.getText().substring(ne.getStartPosition(), ne.getStartPosition() + ne.getLength());
-            log.info("Adding word [" + word + "] into the Set of entities");
             uniqueWords.add(word);
         }
+        log.info("Unique entities in the document: " + uniqueWords.toString());
         return uniqueWords;
     }
 
