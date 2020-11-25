@@ -17,12 +17,15 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.*;
 
-
+/**
+ * Experiment 2. Serves as evaluating the affect of SS on NER.
+ * Knowledge Extraction Frameworks: FOX and Stanford (via FOX).
+ */
 public class EvaluationEntityRecognition {
     private static final Log log = LogFactory.getLog(EvaluationEntityRecognition.class);
 
     //Used for testing small amounts of processed files.
-    final static int processNumberDocs = 101222;
+    final static int processNumberDocs = 111111;
     static int counterProcessedDocs = 0;
 
     public EvaluationEntityRecognition() {
@@ -30,33 +33,41 @@ public class EvaluationEntityRecognition {
 
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
         EvaluationEntityRecognition ep = new EvaluationEntityRecognition();
-
         ep.evaluationEntitites();
-
     }
 
     /**
-     * Document me TODO
+     *  1. compare Entities: basis x [fox/stanford]_input:original-text
+     *  2. compare Entities: basis x [fox/stanford]_input:simplified-text
+     *  3. compare Entities: basis x [fox/stanford]_input:extended_simplified-FOX
+     * Document me
      */
     private void evaluationEntitites() {
         NifReader nf = new NifReader();
 
+        //dataset files
         List<String> testFiles = new ArrayList<String>();
         //testFiles.add("./src/main/resources/eval/ReutersTest.ttl");
-        testFiles.add("./src/main/resources/eval/oke-challenge2018-training.ttl");
-        //testFiles.add("./src/main/resources/eval/RSS-500.ttl");
+        //testFiles.add("./src/main/resources/eval/oke-challenge2018-training.ttl");
+        testFiles.add("./src/main/resources/eval/RSS-500.ttl");
 
         for (String testFile : testFiles) {
             List<Document> docs = nf.readData(testFile);
+            //FOX eval
             //compareEntityBasisWithFOXoriginal(docs);
-            compareEntityBasisWithFOXsimplified(docs);
-        }
+            //compareEntityBasisWithFOXsimplified(docs);
 
-        //1. compare Entities: basis x FOX_input:original-text
-        //2. compare Entities: basis x FOX_input:simplified-text
-        //3. compare Entities: basis x selected+simplified-FOX
+            //Stanford eval
+            //compareEntityBasisWithStanfordOriginal(docs);
+            compareEntityBasisWithStanfordSimplified(docs);
+        }
     }
 
+    /**
+     * Compares entities from dataset against FOX-entities. .
+     * Fox input: original text
+     * @param docs - the document to extract entities from.
+     */
     private void compareEntityBasisWithFOXoriginal(List<Document> docs) {
         log.info("Starting evaluation NE: [ basis : fox-original ]");
         EvaluationDataManager evalManagerBasisOriginal = new EvaluationDataManager();
@@ -73,19 +84,19 @@ public class EvaluationEntityRecognition {
         evalManagerBasisOriginal.printResults();
     }
 
+    /**
+     * Compares entities from dataset against FOX-entities.
+     * Fox input: simplified text with HS algo (extended)
+     * @param docs - the document to extract entities from.
+     */
     private void compareEntityBasisWithFOXsimplified(List<Document> docs) {
         SentenceSimplifier ss = SentenceSimplifier.getInstance();
-        //EvaluationDataManager evalManagerBasisOrg = new EvaluationDataManager();//TODO brisi
         EvaluationDataManager evalManagerBasisSimplified = new EvaluationDataManager();
         log.info("Starting evaluation NE: [ basis : fox-simplified ]");
         docs.forEach(basisDoc -> {
             try {
-                //log.info("Extracting NE/RE from original sentence: ..."); //TODO delete, used for comparison (simplf, vs not simplf.)
-                //FoxResponse orgFoxResponse = FoxBinding.sendRequest(basisDoc.getText());//TODO delete
                 String simpleSentences = String.join(" ", ss.simplifyFactualComplexSentenceAditional(basisDoc.getText()));
-                //log.info("Extracting NE/RE from simplified sentence: ...");//TODO delete
                 FoxResponse simplifiedFoxResponse = FoxBinding.sendRequest(simpleSentences);
-                //valuateNE(basisDoc, orgFoxResponse, evalManagerBasisOrg); //TODO delete
                 evaluateNE(basisDoc, simplifiedFoxResponse, evalManagerBasisSimplified);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -95,7 +106,50 @@ public class EvaluationEntityRecognition {
     }
 
     /**
-     * Comparing basisDoc with foxResponseDoc against Entities per document.
+     * Compares entities from dataset against Stanford-entities. .
+     * Stanford input: original text
+     * @param docs - the document to extract entities from.
+     */
+    private void compareEntityBasisWithStanfordOriginal(List<Document> docs) {
+        log.info("Starting evaluation NE: [ basis : Stanford-original ]");
+        EvaluationDataManager evalManagerBasisOriginal = new EvaluationDataManager();
+
+        docs.forEach(basisDoc -> {
+            try {
+                FoxResponse basisFoxResponse = FoxBinding.sendStanfordRequest(basisDoc.getText());
+                evaluateNE(basisDoc, basisFoxResponse, evalManagerBasisOriginal);
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        });
+        evalManagerBasisOriginal.printResults();
+    }
+
+    /**
+     * Compares entities from dataset against Stanford-entities.
+     * Stanford input: simplified text with HS algo (extended)
+     * @param docs - the document to extract entities from.
+     */
+    private void compareEntityBasisWithStanfordSimplified(List<Document> docs) {
+        SentenceSimplifier ss = SentenceSimplifier.getInstance();
+        //EvaluationDataManager evalManagerBasisOrg = new EvaluationDataManager();//TODO brisi
+        EvaluationDataManager evalManagerBasisSimplified = new EvaluationDataManager();
+        log.info("Starting evaluation NE: [ basis : Stanford-simplified ]");
+        docs.forEach(basisDoc -> {
+            try {
+                String simpleSentences = String.join(" ", ss.simplifyFactualComplexSentenceAditional(basisDoc.getText()));
+                FoxResponse simplifiedFoxResponse = FoxBinding.sendStanfordRequest(simpleSentences);
+                evaluateNE(basisDoc, simplifiedFoxResponse, evalManagerBasisSimplified);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        });
+        evalManagerBasisSimplified.printResults();
+    }
+
+    /**
+     * Compares basisDoc with foxResponseDoc against Entities per document.
      *
      * @param basisDoc    - the base document
      * @param foxResponse - response received from FOX containing entities and relations
@@ -140,7 +194,6 @@ public class EvaluationEntityRecognition {
         }
 
     }
-
 
     /**
      * Extracts NER/RE with FOX from a document in a ttl-nif format.

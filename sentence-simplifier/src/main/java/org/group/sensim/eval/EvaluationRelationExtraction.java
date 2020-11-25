@@ -34,6 +34,9 @@ public class EvaluationRelationExtraction {
         er.evaluationRelationExtractionJson();
     }
 
+    /**
+     * Processes evaluation from Nif file.
+     */
     private void evaluationRelationExtractionNif() {
         NifReader nf = new NifReader();
         List<String> testFiles = new ArrayList<>();
@@ -46,12 +49,20 @@ public class EvaluationRelationExtraction {
         }
     }
 
+    /**
+     * Process RE evaluation from JSON file.
+     *
+     * Experiment 2; main evaluation
+     *
+     * Compares RE from original text aganst RE from simplified text.
+     * KE tools: FOX and Stanford.
+     */
     private void evaluationRelationExtractionJson() {
         JsonReader jsonReader = new JsonReader();
         List<String> testFiles = new ArrayList<>();
-        testFiles.add("./src/main/resources/eval/20131104-place_of_death_500.json");
+        //testFiles.add("./src/main/resources/eval/20131104-place_of_death_500.json");
         //testFiles.add("./src/main/resources/eval/20130403-place_of_birth_500.json");
-        //testFiles.add("./src/main/resources/eval/20130403-institution_500.json");
+        testFiles.add("./src/main/resources/eval/20130403-institution_500.json");
         Map<String, Boolean> textRelevanceMap = new HashMap<>();
 
         for (String testFile : testFiles) {
@@ -60,12 +71,22 @@ public class EvaluationRelationExtraction {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            //eval with FOX
             //compareRelationJSONBasisWithFOXoriginal(textRelevanceMap);
-            compareRelationJSONBasisWithFOXsimplified(textRelevanceMap);
+            //compareRelationJSONBasisWithFOXsimplified(textRelevanceMap);
+
+            //eval with Stanford (via FoxBinding)
+            //compareRelationJSONBasisWithStanfordOriginal(textRelevanceMap);
+            compareRelationJSONBasisWithStanfordSimplified(textRelevanceMap);
         }
 
     }
 
+    /**
+     * Compares relations from dataset (docs) against FOX-relations.
+     * FOX input: original text with HS algo (extended)
+     * @param docs - the document to extract entities from.
+     */
     private void compareRelationBasisWithFOXoriginal(List<Document> docs) {
         log.info("Starting evaluation relation-extraction: [ basis : fox-original ]");
         EvaluationDataManager evalManagerBasisOriginal = new EvaluationDataManager();
@@ -146,6 +167,11 @@ public class EvaluationRelationExtraction {
         }
     }
 
+    /**
+     * Compares relations from dataset (docs) against FOX-relations.
+     * FOX input: original text with HS algo (extended)
+     * @param textRelevanceMap - Map of text and its relevance.
+     */
     private void compareRelationJSONBasisWithFOXoriginal(Map<String, Boolean> textRelevanceMap) {
         log.info("Starting evaluation relation-extraction JSON: [ basis : fox-original ]");
         EvaluationDataManager evalManagerBasisOriginal = new EvaluationDataManager();
@@ -162,6 +188,11 @@ public class EvaluationRelationExtraction {
         log.info("End of evaluation relation-extraction JSON: [ basis : fox-original ]");
     }
 
+    /**
+     * Compares relations from dataset (docs) against FOX-relations.
+     * FOX input: simplified text with HS algo (extended)
+     * @param textRelevanceMap - Map of text and its relevance.
+     */
     private void compareRelationJSONBasisWithFOXsimplified(Map<String, Boolean> textRelevanceMap) {
         log.info("Starting evaluation relation-extraction JSON: [ basis : fox-simplified ]");
         EvaluationDataManager evalManagerBasisOriginal = null;
@@ -181,6 +212,58 @@ public class EvaluationRelationExtraction {
         log.info("End of evaluation relation-extraction JSON: [ basis : fox-simplified ]");
     }
 
+    /**
+     * Compares relations from dataset (docs) against Stanford-relations.
+     * Stanford input: original text with HS algo (extended)
+     * @param textRelevanceMap - Map of text and its relevance.
+     */
+    private void compareRelationJSONBasisWithStanfordOriginal(Map<String, Boolean> textRelevanceMap) {
+        log.info("Starting evaluation relation-extraction JSON:[ basis : Stanford ] input-original ");
+        EvaluationDataManager evalManagerBasisOriginal = new EvaluationDataManager();
+
+        for (String text : textRelevanceMap.keySet()){
+            try {
+                FoxResponse basisFoxResponse = FoxBinding.sendStanfordRequest(text);
+                evaluateJSONRelationExtraction(basisFoxResponse, evalManagerBasisOriginal, textRelevanceMap.get(text));
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+        evalManagerBasisOriginal.printResults();
+        log.info("End of evaluation relation-extraction JSON: [ basis : Stanford ] input-original");
+    }
+
+    /**
+     * Compares relations from dataset (docs) against Stanford-relations.
+     * Stanford input: simplified text with HS algo (extended)
+     * @param textRelevanceMap - Map of text and its relevance.
+     */
+    private void compareRelationJSONBasisWithStanfordSimplified(Map<String, Boolean> textRelevanceMap) {
+        log.info("Starting evaluation relation-extraction JSON: [ basis : Stanford ] input-simplified ");
+        EvaluationDataManager evalManagerBasisOriginal = null;
+        evalManagerBasisOriginal = new EvaluationDataManager();
+        SentenceSimplifier ss = SentenceSimplifier.getInstance();
+
+        for (String text : textRelevanceMap.keySet()){
+            try {
+                String simpleSentences = String.join(" ", ss.simplifyFactualComplexSentenceAditional(text));
+                FoxResponse basisFoxResponse = FoxBinding.sendRequest(simpleSentences);
+                evaluateJSONRelationExtraction(basisFoxResponse, evalManagerBasisOriginal, textRelevanceMap.get(text));
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+        evalManagerBasisOriginal.printResults();
+        log.info("End of evaluation relation-extraction JSON: [ basis : Stanford ] input-simplified");
+    }
+
+    /**
+     * Runs the main comparing and counts TP, FP, FN...
+     *
+     * @param foxResponse - response from FOX (can be Stanford) containing the entities/relations.
+     * @param evalManagerBasisOriginal - evaluation data menager, needed for counting the results.
+     * @param relationPresentInBase - boolean result of the majority votings for a snippet of text.
+     */
     private void evaluateJSONRelationExtraction(FoxResponse foxResponse, EvaluationDataManager evalManagerBasisOriginal, Boolean relationPresentInBase) {
         List<Triple> foxTriples = extractFoxTriples(foxResponse);
         FoxBinding.printFormattedResponse(foxResponse);
@@ -190,9 +273,10 @@ public class EvaluationRelationExtraction {
         if (foxTriples.size() > 0) {
             boolean foxRelationTypeCorrect = false;
             for (Triple foxTriple : foxTriples) {
-                //FoxTypes: place_of_birth := birthPlace, place_of_death := deathPlace,
+                //FoxTypes: place_of_birth := birthPlace,
+                // place_of_death := deathPlace,
                 // institution := education (evidences concerning attending or graduating from an institution)
-                if (foxTriple.getPredicate().contains("deathPlace")) {
+                if (foxTriple.getPredicate().contains("education")) {
                     foxRelationTypeCorrect = true;
                     break;
                 }
@@ -268,6 +352,11 @@ public class EvaluationRelationExtraction {
         return foxResponse;
     }
 
+    /**
+     * Extracts relation-triplets from FOX response and reteurns them in a list.
+     * @param foxResponse - response containing the relations.
+     * @return
+     */
     private List<Triple> extractFoxTriples(FoxResponse foxResponse) {
         List<Triple> foxTriples = new ArrayList<>();
         String subj;

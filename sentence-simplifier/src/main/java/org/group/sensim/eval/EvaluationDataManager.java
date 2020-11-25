@@ -82,7 +82,9 @@ public class EvaluationDataManager {
         return f1score;
     }
 
-
+    /**
+     * Prints the results to console.
+     */
     public void printResults() {
         System.out.println("Counted results:");
         System.out.println("---> TP: " + this.tp);

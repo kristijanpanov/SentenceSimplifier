@@ -23,8 +23,8 @@ public class POSMarker {
      */
     private List<String> relevantPosTags;
 
-    /*
-    Pos tags, that are not considered as entity.
+    /**
+     * Pos tags, that are not considered as entity.
      */
     private List<String> excludedPosTags;
     private MaxentTagger tagger;
@@ -42,7 +42,7 @@ public class POSMarker {
     }
 
     public POSMarker(List<String> relevantPosTagsFiles) {
-        BasicConfigurator.configure();
+        //BasicConfigurator.configure();
         relevantPosTags = new ArrayList<String>();
         relevantPosTags = initSavedRelevantTags(relevantPosTagsFiles);
         excludedPosTags = initExcludedTags();
@@ -53,7 +53,9 @@ public class POSMarker {
         }
     }
 
-
+    /**
+     * Pos tags, that are not related with the entity types PER, LOC, ORG.
+     */
     private List<String> initExcludedTags() {
         List<String> excludedPosTags = new ArrayList<String>();
 //        excludedPosTags.add("DT");
@@ -81,17 +83,17 @@ public class POSMarker {
         return excludedPosTags;
     }
 
-
+    /**
+     * Initializes saved entity POS-Sequences.
+     * The POS-tags were extracted from the standard files: RSS, Reuters and oke-challenge-2018.
+     */
     private List<String> initSavedRelevantTags() {
 
         List<String> resourceFiles = new ArrayList<String>();
 
-        //standard: Pointing to LOC, PERSON, ORG
-        // here define which files should be loaded the pos-sequences from
         resourceFiles.add("./src/main/resources/possequences/marking_entityToPOS_RSS-50.txt");
         resourceFiles.add("./src/main/resources/possequences/marking_entityToPOS_ReutersTes.txt");
         resourceFiles.add("./src/main/resources/possequences/marking_entityToPOS_oke-challenge2018-trainin.txt");
-
 //        resourceFiles.add("./src/main/resources/possequences/marking_entityToPOS_dbpedia-spotlight-ni.txt");  //special case- different entity types.
 
         return initSavedRelevantTags(resourceFiles);
@@ -141,7 +143,7 @@ public class POSMarker {
      * The List was created after finding out which tags-point to an entity.
      * The List may be extended.
      *
-     * @return
+     * @return List<String> with two elements: NNP and NNPS.
      */
     private List<String> initDefaultRelevantTags() {
         //TODO insert these in a document. The document should be updated after running the EntityPOSUpdator := POSApp
@@ -197,7 +199,11 @@ public class POSMarker {
         return listWordTag;
     }
 
-
+    /**
+     * Logs the POS tags for a given sentence into the console.
+     * @param sentence input sentence to be tagged.
+     * @return pos-tagged sentence.
+     */
     public String printPOSofSentence(String sentence) {
         log.info("Sentence: " + sentence);
         String tagged = tagger.tagString(sentence);
@@ -205,11 +211,13 @@ public class POSMarker {
         return tagged;
     }
 
-
+    /**
+     * Checks whether a document contains any entity.
+     * @param document
+     * @return true, if entity present.
+     */
     public boolean checkSentenceRelevance(String document) {
-
         String docPosTags = extractPOStags(document);
-
 
         log.info("Checking relevance...");
         for (String posSeq : relevantPosTags) {
@@ -232,7 +240,7 @@ public class POSMarker {
      *
      * @param sentence - String, the sentence to be extracted pos-tags from.
      * @param entities - Map containing the Entities with a name (extracted from ttl file.)
-     * @param writer - PrintWriter, which defines in which file to write the results.
+     * @param writer   - PrintWriter, which defines in which file to write the results.
      * @return
      */
     public String extractPOSofEntities(String sentence, Map<Integer, String> entities, PrintWriter writer) {
@@ -254,7 +262,7 @@ public class POSMarker {
             }
 
             if (entityPos.length() > 0) {
-                entityPos = entityPos.substring(0, entityPos.length()-1);
+                entityPos = entityPos.substring(0, entityPos.length() - 1);
                 writer.println(entityPos);
                 log.info("Writing POS-sequence: [" + entityPos + "]");
             }

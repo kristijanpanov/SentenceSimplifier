@@ -267,7 +267,6 @@ public class SentenceSimplifier {
         extractAppositives(extracted, orig);
         extractVerbParticipialModifiers(extracted, orig);
         extractADJPs(extracted, orig);
-        extractNotOnlyBut(extracted, orig);
 
         //extractWITHPartcipialPhrases(extracted, orig); //too rare to worry about
         if(extractFromVerbComplements) extractComplementClauses(extracted, orig);
@@ -1407,24 +1406,22 @@ public class SentenceSimplifier {
             Tree verbPhraseTree = matcher.getNode("verb");
             Tree allAdjp = matcher.getNode("allAdjps");
 
-            System.out.println("Source : " + sourceTree.getChildrenAsList());
+            System.out.println("----Extracting ADJPs----");
 
-            System.out.println("Subject : " + subjectTree.yield());
-            System.out.println("First child of verb: " + verbPhraseTree.getChild(0).yield());
-
-            System.out.println("Verb (full): " + verbPhraseTree.yield());
-            System.out.println("Verb LAST child : " + verbPhraseTree.lastChild());
-            System.out.println("children as list ALLADJP " + allAdjp.getChildrenAsList());
-            System.out.println("ALL ADJP NODE: " + allAdjp.yield());
-            System.out.println("number children of VERB:" +verbPhraseTree.numChildren());
-            System.out.println("srcTree lastChild: :" +sourceTree.lastChild().yield());
+//            System.out.println("Source : " + sourceTree.getChildrenAsList());
+//            System.out.println("Subject : " + subjectTree.yield());
+//            System.out.println("First child of verb: " + verbPhraseTree.getChild(0).yield());
+//            System.out.println("Verb (full): " + verbPhraseTree.yield());
+//            System.out.println("Verb LAST child : " + verbPhraseTree.lastChild());
+//            System.out.println("children as list ALLADJP " + allAdjp.getChildrenAsList());
+//            System.out.println("ALL ADJP NODE: " + allAdjp.yield());
+//            System.out.println("number children of VERB:" +verbPhraseTree.numChildren());
+//            System.out.println("srcTree lastChild: :" +sourceTree.lastChild().yield());
 
             List<Tree> adjpTrees = new ArrayList<Tree>();
             List<Tree> beforeAdjp = new ArrayList<Tree>();
             boolean extractedAdjp=false;
 
-//[(ADJP (JJ small)), (CC and), (ADJP (JJ cheap) (RB enough) (S (VP (TO to) (VP (VB replace) (NP (JJ simple) (JJ mechanical) (NNS controls)) (PP (IN in) (NP (NP (JJ domestic) (NNS appliances)) (PP (JJ such) (IN as) (NP (VBG washing) (NNS machines)))))))))]
-            System.out.println("--------");
             for (Tree adjpTree : allAdjp) {
                 if (!adjpTree.value().equals(",")){
                     //System.out.println("iterating through: " + adjpTree.value());
@@ -1453,9 +1450,7 @@ public class SentenceSimplifier {
             int indexAdjp = 0;
             for (Tree t : inputTree){
                 if(allAdjp.equals(t)){
-                    //PROBI nesto u taj stil word.parent(treeSent.firstChild()).label().toString()
-                    System.out.println("inputTree Tree " +  inputTree.labeledYield());
-                    //tva funkcionira.. izmisli kak da go upotrebas, vidi dali sekojpat e child0
+                    //System.out.println("inputTree Tree " +  inputTree.labeledYield());
 
                     Tree parent = t.parent(inputTree);
                     Tree gparent = t.parent(inputTree).parent(inputTree);
@@ -1463,26 +1458,24 @@ public class SentenceSimplifier {
                     indexAdjp = t.parent(gparent).indexOf(t);
 //                    System.out.println("index : " +  indexAdjp);
 //
-                    System.out.println( "REMOVING: " + parent.removeChild(indexAdjp).labeledYield());
+                   //System.out.println( "REMOVING: " + parent.removeChild(indexAdjp).labeledYield());
 //                    System.out.println("inputTree Tree " +  inputTree.labeledYield());
 
                     for (Tree adjpt : adjpTrees) {
-                        System.out.println("Adding adjpt: " + adjpt.labeledYield());
+                        //System.out.println("Adding adjpt: " + adjpt.labeledYield());
                         int countAddedChildren=0;
                         //add adjp on the position of the deleted node
                         parent.addChild(indexAdjp, AnalysisUtilities.getInstance().readTreeFromString("("+adjpt.label()+" "+adjpt.yield()+")"));
                         countAddedChildren++;
 
                         for (Tree before : beforeAdjp ){
-                            System.out.println("beforeAdjp" + before.labeledYield());
+                            //System.out.println("beforeAdjp" + before.labeledYield());
                             parent.addChild(indexAdjp, AnalysisUtilities.getInstance().readTreeFromString("("+before.label()+" "+before.yield()+")"));
                             countAddedChildren++;
                         }
 
-
-
-                        System.out.println("inputTree Tree      " +  inputTree.labeledYield());
-                        System.out.println("Original Input Tree " +  input.getIntermediateTree().labeledYield());
+                        //System.out.println("inputTree Tree      " +  inputTree.labeledYield());
+                        //System.out.println("Original Input Tree " +  input.getIntermediateTree().labeledYield());
 
                         Question newTreeWithFeatures = input.deeperCopy();
                         newTree = inputTree.deepCopy();
@@ -1494,6 +1487,9 @@ public class SentenceSimplifier {
                         for (int i = 0; i < countAddedChildren; i++ ) {
                             parent.removeChild(indexAdjp);
                         }
+
+                        System.out.println("----Extracting ADJPs finished ----");
+
                     }
                     //verbPhraseTree.parent(sourceTree).remove(allAdjp);
                 }
@@ -1501,71 +1497,6 @@ public class SentenceSimplifier {
 
         }
     }
-
-    /**
-     * If "not only... but..." is present in a sentence, then the sentence will be split.
-     *
-     * Examples:
-     * "This makes it not only easier to learn, but means it can be typed using a normal keyboard."
-     * --> This makes it easier to learn. This means it can be typed using a normal keyboard.
-     *
-     * "Serfdom developed in Eastern Europe after the Black Death epidemics, which not only stopped the migration but depopulated Western Europe.
-     * --> Serfdom developed in Eastern Europe after the Black Death epidemics, which stopped the migration.
-     * --> Serfdom developed in Eastern Europe after the Black Death epidemics, which depopulated Western Europe.
-     *
-     * @param extracted
-     * @param input
-     */
-    private void extractNotOnlyBut(List<Question> extracted, Question input) {
-        String tregexOpStr;
-        TregexPattern matchPattern;
-        TregexMatcher matcher;
-        Tree newTree;
-        // (ROOT (S (NP (DT The) (NN book)) (VP (VBZ is) (ADJP (JJ yellow) (CC and) (JJ old))) (. .)))
-        // (ROOT (S (NP (DT The) (NN book)) (VP (VBZ is) (ADJP (ADJP (RB very) (JJ yellow)) (CC and) (ADJP (RB pretty) (JJ old)))) (. .
-        // )))
-
-        // tregexOpStr = "CONJP|CC !< either|or|neither|nor > NP !>> SBAR "
-        //                    + " !> (NP < (/^(N.*|SBAR|PRP)$/ !$ /^(N.*|SBAR|PRP)$/))";
-
-        // tregexOpStr = "NP=parent < (CONJP|CC !< or|nor [ "
-        //                + " $+ /^(N.*|PRP|SBAR)$/=child $-- /^(N.*|PRP|SBAR)$/ | " //there must be a noun on each side of the conjunction
-        //                + " $-- /^(N.*|PRP|SBAR)$/=child $+ /^(N.*|PRP|SBAR)$/ ] ) " //this avoids extracting from flat NPs such as "the smaller and darker form"
-        //                + " !>> (/.*/ $ (CC|CONJP !< or|nor)) "  //this cannot be nested within a larger conjunction or followed by a conjunction (we recur later to catch this)
-        //                + " !$ (CC|CONJP !< or|nor)"
-        //                + " !.. (CC|CONJP !< or|nor > NP|PP|S|SBAR|VP) !>> SBAR ";
-
-        // tregexOpStr = "NP=np < (SBAR=sbar [ < (WHADVP=wherecomp < (WRB < where)) "
-        //                + " | < (WHNP !< /WP\\$/) "
-        //                + " | < (WHNP=possessive < /WP\\$/)"  //John, whose car was
-        //                + " | < (WHPP < IN|TO=preposition) ] $-- NP $- /,/ "
-        //                + " < S=relclause  !< WHADJP)";
-
-        // CONJP ( RB not ) ( RB only ) .... CONJP ( CC but )
-
-
-
-        tregexOpStr = "ROOT=root < (S=src < (NP=subj $++ (VP=verb << (ADJP=allAdjps" +
-                " [ < (JJ $++ JJ & $++ ( CC <# and|or ))" + //subject has two adjectives.
-                " | << (ADJP $++ ADJP & $++ (CC <# and ))]))))"; //has many adjectives divided with and
-
-
-
-        matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
-        matcher = matchPattern.matcher(input.getIntermediateTree());
-
-        if(matcher.find()) {
-            Tree rootTree = matcher.getNode("root").deeperCopy();
-            Tree inputTree = matcher.getNode("root").deeperCopy(); //input.getIntermediateTree();
-            Tree sourceTree = matcher.getNode("src").deeperCopy();
-            Tree subjectTree = matcher.getNode("subj").deeperCopy();
-            Tree verbPhraseTree = matcher.getNode("verb");
-            Tree allAdjp = matcher.getNode("allAdjps");
-
-        }
-
-    }
-
 
 
     public void setBreakNPs(boolean breakNPs) {
@@ -1789,15 +1720,17 @@ public class SentenceSimplifier {
             //U. S. The new sentence... --> U.S. The new sentence...
             sent = normalizePunctuation(sent);
 
+            //q.getIntermediateTree();
             //add sentence if result list is not empty
             List<String> simplifiedSentences = RuleProcess.splitNotOnlyButAlso(q, sent);
+            //List<String> simplifiedSentences = new ArrayList<String>();
 
             if (simplifiedSentences.size() > 0) {
                 sentences.addAll(simplifiedSentences);
             } else {
                 sentences.add(sent);
             }
-            //sentences.add(sent);
+   //         sentences.add(sent);
         }
 
         //could not be simplified, return original input

@@ -11,21 +11,26 @@ import java.util.List;
 /**
  * This class contains the rules, which are additionally implemented.
  * <p>
- * TODO Note: ExtractADJPs should be also in this class.
  */
 public class RuleProcess {
 
     public RuleProcess() {
     }
 
-
+    /**
+     * A sentence which contains not-only-but-also structrue are split.
+     *
+     * @param q
+     * @param sentence the sentence to be split.
+     * @return List of sentences which were split.
+     */
     public static List<String> splitNotOnlyButAlso(Question q, String sentence) {
         List<String> sentences = new ArrayList<String>();
         List<String> words = new ArrayList<String>();
         List<String> tags = new ArrayList<String>();
         String tmpSentence = "";
 
-        if (checkSplitableNotOnlyBut(sentence)) {
+        if (checkSplitableNotOnlyBut(sentence) && q.getTree() != null) {
             int indexNotOnly = 9999;
             int indexBut = 0;
 
@@ -74,11 +79,6 @@ public class RuleProcess {
                 afterBut = afterBut.substring(5);
             }
 
-//            System.out.println("index not only: " + indexNotOnly);
-//            System.out.println("index but: " + indexBut);
-//            System.out.println("before: " + beforeNotOnly);
-//            System.out.println("between: " + betweenNotOnlyAndBuy);
-//            System.out.println("after: " + afterBut);
 
             String sentenceBeforeBut = beforeNotOnly + betweenNotOnlyAndBuy + ".";
             String sentenceAfterBut = beforeNotOnly + afterBut + ".";
@@ -105,13 +105,16 @@ public class RuleProcess {
         int indexNotOnly = sentence.toLowerCase().indexOf("not only");
         int indexBut = sentence.toLowerCase().indexOf(" but", indexNotOnly);
 
-        return indexBut > indexNotOnly;
+        boolean splitable = false;
+        if (indexNotOnly != -1) {
+            splitable = indexBut > indexNotOnly;
+        }
+        return splitable;
     }
 
     /**
      * True: if a sentence contains the string "not only" followed by a "but also". Otherwise false.
-     *
-     * @param sentence
+     * @param sentence - input sentence.
      * @return
      */
     private static boolean checkSplitableNotOnlyButAlso(String sentence) {

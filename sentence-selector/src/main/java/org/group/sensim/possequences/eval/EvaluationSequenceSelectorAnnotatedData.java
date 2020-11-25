@@ -1,19 +1,13 @@
 package org.group.sensim.possequences.eval;
 
-import edu.stanford.nlp.trees.Tree;
-import org.aksw.fox.binding.FoxResponse;
 import org.aksw.gerbil.transfer.nif.Document;
-import org.apache.jena.rdfxml.xmloutput.impl.Basic;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.group.sensim.eval.FoxBinding;
+import org.group.sensim.eval.reader.JsonReader;
 import org.group.sensim.possequences.POSMarker;
 import org.group.sensim.possequences.eval.reader.NifReader;
 //import org.group.sensim.possequences.POSMarker;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,21 +16,41 @@ import java.util.Map;
 /**
  * This class serves to evauluate the correctness of mapping POS-sequence to an entity.
  */
-public class EvaluationSequenceSelector {
-    public final static Logger log = LogManager.getLogger(EvaluationSequenceSelector.class);
+public class EvaluationSequenceSelectorAnnotatedData {
+    public final static Logger log = LogManager.getLogger(EvaluationSequenceSelectorAnnotatedData.class);
 
     public static void main(String[] args) {
-        //Evaluation_1: 3 combinations in order to perform 'leave-one-out cross' validation. Terbil-annotated resources
+        //Evaluation_1: 3 combinations in order to perform 'leave-one-out cross' validation. Gerbil-annotated resources
 //             processFirstLeaveOneOutCrossValidation();
 //             processSecondLeaveOneOutCrossValidation();
 //             processThirdLeaveOneOutCrossValidation();
-        processAdditionalLeaveOneOutCrossValidation();
 
-        //Evaluation_2: Take the results from FOX as basis (assume correct), instead of gerbil-annotated resources.
-        //processFirstEvaluationBasedOnFOX();
+//        processAdditionalLeaveOneOutCrossValidation();
+
+        //Evaluation_2: Take the results from google-json-datasets as basis (assume correct),
+        processJsonEvaluation();
 
 
     }
+
+    private static void processJsonEvaluation() {
+        List<String> posTagsFiles = new ArrayList<>();
+        posTagsFiles.add("./src/main/resources/possequences/marking_entityToPOS_oke-challenge2018-trainin.txt");
+        posTagsFiles.add("./src/main/resources/possequences/marking_entityToPOS_ReutersTes.txt");
+        posTagsFiles.add("./src/main/resources/possequences/marking_entityToPOS_RSS-50.txt");
+
+        POSMarker posMarker = new POSMarker(posTagsFiles);
+
+        //initialize test-ttl file
+        List<String> testJsonFile = new ArrayList<>();
+        testJsonFile.add("./src/main/resources/eval/20130403-institution_500.json");
+        testJsonFile.add("./src/main/resources/eval/20130403-place_of_birth_500.json");
+        testJsonFile.add("./src/main/resources/eval/20131104-place_of_death_500.json");
+
+        processEvaluationJson(posMarker, testJsonFile);
+    }
+
+
 
     /**
      * First combination for the 'leave-one-out' cross validation.
@@ -155,7 +169,6 @@ public class EvaluationSequenceSelector {
                     //it should be relevant --> TP
                     if (entities.keySet().size() > 0) {
                         evalDataMgr.incrementTP();
-
                     }
                     //it should not be relevant --> FP
                     else {
@@ -174,71 +187,57 @@ public class EvaluationSequenceSelector {
         evalDataMgr.printResults();
     }
 
-    private static void processFirstEvaluationBasedOnFOX() {
-        //initialize pre-saved pos-sequences
-        List<String> posTagsFiles = new ArrayList<>();
-        posTagsFiles.add("./src/main/resources/possequences/marking_entityToPOS_oke-challenge2018-trainin.txt");
-        posTagsFiles.add("./src/main/resources/possequences/marking_entityToPOS_ReutersTes.txt");
-        posTagsFiles.add("./src/main/resources/possequences/marking_entityToPOS_RSS-50.txt");
-        POSMarker posMarker = new POSMarker(posTagsFiles);
-
-        List<String> testFiles = new ArrayList<>();
-        testFiles.add("./src/main/resources/datasets/simpleWiki_.ori.test.dst");
-
-        processFOXEvaluation(posMarker, testFiles);
-
-    }
-
-    private static void processFOXEvaluation(POSMarker posMarker, List<String> testFiles) {
+    /**
+     * Process evaluation (pre-experiment).
+     * Base-results: majority votes from the judges.
+     * Actual-result: posMarker.checkSentenceRelevance
+     *
+     * @param posMarker    - the posMarker, which checks the relevance of a sentence with already pre-loaded pos-sequences.
+     * @param testJsonFile - list of ttl-files. On these files is the test executed.
+     */
+    private static void processEvaluationJson(POSMarker posMarker, List<String> testJsonFile) {
+        JsonReader jsonReader = new JsonReader();
         EvaluationDataManager evalDataMgr = new EvaluationDataManager();
 
-        BufferedReader reader;
-        for (String testFile : testFiles) {
+        for (String testFile : testJsonFile) {
+            Map<String, Boolean> snippetsWithRelevance = null;
             try {
-                log.info("Testing file: " + testFile);
-                reader = new BufferedReader(new FileReader(testFile));
-                String sentence = reader.readLine();
-                while (sentence != null) {
-                    sentence = reader.readLine();
-                    if (sentence != null) {
-                        FoxResponse foxResponse = FoxBinding.sendRequest(sentence);
-                        boolean sentenceFOXRelevant = (foxResponse.getEntities().size() > 0);
+                snippetsWithRelevance = jsonReader.extractSnippetsWithRelevance(testFile);
 
-                        boolean sentenceSystemRelevant = posMarker.checkSentenceRelevance(sentence);
-                        log.info("Sentence declared as relevant: " + sentenceSystemRelevant);
+                for (String snippet : snippetsWithRelevance.keySet()) {
 
-                        if (sentenceSystemRelevant) {
-                            //it should be relevant --> TP
-                            if (sentenceFOXRelevant) {
-                                evalDataMgr.incrementTP();
-                            }
-                            //it should not be relevant --> FP
-                            else {
-                                evalDataMgr.incrementFP();
-                            }
+                    //this gives as the majority of judges have voted for presence of a relation, actually in every doc is an entity present (subj and obj)
+                    //boolean snippetRelevant = snippetsWithRelevance.get(snippet);
+                    boolean snippetRelevant = true;
+                    boolean sentenceDeclaredAsRelevant = posMarker.checkSentenceRelevance(snippet);
+                    log.info("Sentence declared as relevant in json: " + snippetRelevant);
+                    log.info("Sentence declared as relevant from system: " + sentenceDeclaredAsRelevant);
+
+                    if (sentenceDeclaredAsRelevant) {
+                        //it should be relevant --> TP
+                        if (snippetRelevant) {
+                            evalDataMgr.incrementTP();
+                        }
+                        //it should not be relevant --> FP
+                        else {
+                            evalDataMgr.incrementFP();
+                        }
+                    } else {
+                        //it should be relevant --> FN
+                        if (snippetRelevant) {
+                            evalDataMgr.incrementFN();
+                            log.info("Sentence marked as irrelevant but json-snippet has entities.");
                         } else {
-                            //it should be relevant --> FN
-                            if (sentenceFOXRelevant) {
-                                evalDataMgr.incrementFN();
-                            }
-                            else{
-                                //it should not be relevant --> TN // not interesting case.
-                                evalDataMgr.incrementTN();
-                            }
+                            //it should not be relevant --> TN // not interesting case.
+                            evalDataMgr.incrementTN();
                         }
                     }
                 }
-                reader.close();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            log.info("Testing file: " + testFile + " finished. ");
-
+            evalDataMgr.printResults();
         }
-        evalDataMgr.printResults();
-
     }
-
-
 }

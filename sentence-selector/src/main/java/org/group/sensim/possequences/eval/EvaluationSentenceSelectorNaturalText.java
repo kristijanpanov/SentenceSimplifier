@@ -1,23 +1,27 @@
 package org.group.sensim.possequences.eval;
 
-import org.aksw.gerbil.transfer.nif.Document;
+import org.aksw.fox.binding.FoxResponse;
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.group.sensim.eval.FoxBinding;
 import org.group.sensim.possequences.POSMarker;
-import org.group.sensim.possequences.eval.reader.NifReader;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class EvaluationSentenceSelectorNaturalText {
 
     public final static Logger log = LogManager.getLogger(EvaluationSentenceSelectorNaturalText.class);
 
+    final static int processNumberDocs = 1000;
+    static int counterProcessedDocs = 0;
+
     public static void main(String[] args) {
-
         processEvaluationSentenceSelector();
-
     }
 
     /**
@@ -37,55 +41,74 @@ public class EvaluationSentenceSelectorNaturalText {
 
         //initialize test-ttl file
         List<String> testTtlFile = new ArrayList<>();
-        //testTtlFile.add("./src/main/resources/eval/dbpedia-spotlight-nif.ttl");
-        processEvaluation(posMarker, testTtlFile);
-
+        testTtlFile.add("./src/main/resources/datasets/SimpleComplexSentencesPair_wiki");
+        processFOXEvaluation(posMarker, testTtlFile);
     }
 
     /**
-     * Process main evaluation. POS-sequences extracted from the gerbil-datasets(ttl, but pre-saved as txt) and tested on gerbil-datasets (ttl).
+     * Runs the evaluation with FOX as base-rasult.
      *
-     * @param posMarker    - the posMarker, which checks the relevance of a sentence with already pre-loaded pos-sequences.
-     * @param testTtlFiles - list of ttl-files. On these files is the test executed.
+     * @param posMarker - the posMarker which marks the sentences as candidates/relevant.
+     * @param testFiles - dataset-file.
      */
-    private static void processEvaluation(POSMarker posMarker, List<String> testTtlFiles) {
-        NifReader nf = new NifReader();
+    private static void processFOXEvaluation(POSMarker posMarker, List<String> testFiles) {
         EvaluationDataManager evalDataMgr = new EvaluationDataManager();
+        int countProcessedSentences = 0;
+        BufferedReader reader;
+        for (String testFile : testFiles) {
+            try {
+                log.info("Testing file: " + testFile);
+                reader = new BufferedReader(new FileReader(testFile));
+                String sentence = reader.readLine();
+                while (sentence != null) {
+                    sentence = reader.readLine();
+                    if (sentence != null && sentence.length() > 1) {
+                        countProcessedSentences++;
+                        if (countProcessedSentences < 6000){ //skip first 1000
+                            continue;
+                        }
 
-        for (String testFile : testTtlFiles) {
-            List<Document> docs = nf.readData(testFile);
+                        FoxResponse foxResponse = FoxBinding.sendRequest(sentence);
+                        boolean sentenceFOXRelevant = (foxResponse.getEntities().size() > 0);
+                        boolean sentenceSystemRelevant = posMarker.checkSentenceRelevance(sentence);
 
-            docs.forEach(basisDoc -> {
-                //String simpleSentences = ss.simplifyFactualComplexSentence(basisDoc.getText());
+                        log.info("Sentence declared as relevant from FOX: " + sentenceFOXRelevant);
+                        log.info("Sentence declared as relevant from System: " + sentenceSystemRelevant);
 
-                Map<Integer, String> entities = NifReader.getEntities(basisDoc);
-                NifReader.printNifDocument(basisDoc);
-
-                log.info("Extracting POS tags from: [" + basisDoc.getText() + "]");
-                String sentPosTags = posMarker.extractPOStags(basisDoc.getText());
-
-                boolean sentenceDeclaredAsRelevant = posMarker.checkSentenceRelevance(basisDoc.getText());
-                log.info("Sentence declared as relevant: " + sentenceDeclaredAsRelevant);
-
-                if (sentenceDeclaredAsRelevant) {
-                    //it should be relevant --> TP
-                    if (entities.keySet().size() > 0) {
-                        evalDataMgr.incrementTP();
-
+                        if (sentenceSystemRelevant) {
+                            //it should be relevant --> TP
+                            if (sentenceFOXRelevant) {
+                                evalDataMgr.incrementTP();
+                            }
+                            //it should not be relevant --> FP
+                            else {
+                                evalDataMgr.incrementFP();
+                            }
+                        } else {
+                            //it should be relevant --> FN
+                            if (sentenceFOXRelevant) {
+                                evalDataMgr.incrementFN();
+                                log.info("Sentence marked as irrelevant but FOX has found entities.");
+                            }
+                            else{
+                                //it should not be relevant --> TN // not interesting case.
+                                evalDataMgr.incrementTN();
+                            }
+                        }
+                        counterProcessedDocs++;
                     }
-                    //it should not be relevant --> FP
-                    else {
-                        evalDataMgr.incrementFP();
+                    if(counterProcessedDocs > processNumberDocs) {
+                        evalDataMgr.printResults();
+                        System.exit(1); //process only the first few documents...
                     }
-                } else {
-                    //it should be relevant --> FN
-                    if (entities.keySet().size() > 0) {
-                        evalDataMgr.incrementFN();
-                        log.info("Increasing FN : Because the entities are contained: " + entities);
-                    }
-                    //it should not be relevant --> FP // not interesting case.
                 }
-            });
+                reader.close();
+            } catch (IOException e) {
+                log.info("Exception Occured. Current results: " + countProcessedSentences);
+                evalDataMgr.printResults();
+                e.printStackTrace();
+            }
+            log.info("Testing file: " + testFile + " finished. Processed sentences: " + countProcessedSentences);
         }
         evalDataMgr.printResults();
     }

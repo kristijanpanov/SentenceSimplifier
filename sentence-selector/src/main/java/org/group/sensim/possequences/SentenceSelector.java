@@ -10,9 +10,10 @@ import java.nio.file.Files;
 import java.util.List;
 
 /**
- * This class serves to select the relevant sentences.
- * Relevant sentence := a sentence containing at least one entity.
+ * !Currently unused.!
  *
+ * (This class serves to select the relevant sentences.
+ * Relevant sentence := a sentence containing at least one entity.)
  */
 public class SentenceSelector {
 
@@ -22,89 +23,6 @@ public class SentenceSelector {
     public SentenceSelector() {
         posMarker = new POSMarker();
     }
-
-
-
-//    public static void main(String[] args) {
-//        //TODO for now testing simplification. In the future move this in mainApp.
-//        SentenceSelector selector = new SentenceSelector();
-//        SentenceTransformer sTransf = new SentenceTransformer();
-//        SentenceSimplifier ss = SentenceSimplifier.getInstance();
-//        //Map<Question, String> questionSentence = new HashMap<>();
-//
-//        String corpusFile = "./src/main/resources/datasets/PWKP_108016_SimpleComplexSentencesPair";
-//        List<String> sentences = extractLinesFromFile(corpusFile);
-//
-//        NifReader nf = new NifReader();
-//        String testFile = "./src/main/resources/org.group.sensim.eval/ReutersTest.ttl";
-//        List<Document> docs = nf.readData(testFile);
-//
-//        docs.forEach(basisDoc -> {
-//            Map<Question, String> questionSentence = ss.simplifyFactualComplexSentenceAsTree(basisDoc.getText());
-//            for (Question q : questionSentence.keySet()) {
-//                //if sentence Relevant, then further processing.
-//                if (selector.isSentenceRelevant(q)) {
-//                    //further simplifications happen here. This method should return something :)
-//                    sTransf.transformer(q.getIntermediateTree());
-//                }
-//            }
-//        });
-//
-//    }
-
-//        for (String sentence : sentences){
-//            if (sentence.length()>0) {
-//                questionSentence = ss.simplifyFactualComplexSentenceAsTree(sentence);
-//
-//                for (Question q  : questionSentence.keySet()){
-//                    //if sentence Relevant, then further processing.
-//                    if (selector.isSentenceRelevant(q)){
-//
-//                        //further simplifications happen here. This method should return something :)
-//                        sTransf.transformer(q.getIntermediateTree());
-//
-//                    }
-//                }
-//            }
-//        }
-
-
-
-
-    public static void main(String[] args) throws MalformedURLException, FileNotFoundException, UnsupportedEncodingException {
-//        SentenceSimplifier ss = SentenceSimplifier.getInstance();
-//        ss.simplifyFactualComplexSentenceAditional("Geographers study not only the physical details of the environment but also its impact on human and wildlife ecologies, weather and climate patterns, economics, and culture.");
-
-
-    }
-
-    public static List<String> extractLinesFromFile(String file) {
-        File testFile = new File(new File(file).getAbsolutePath());
-
-        List<String> lines = null;
-        try {
-            lines = Files.readAllLines(testFile.toPath());
-        } catch (final IOException e) {
-            log.error(e.getLocalizedMessage(), e);
-            log.error(testFile.toPath());
-        }
-
-        return lines;
-    }
-
-
-    /**
-     * TODO move method to different destination.
-     *
-     * Prints string line to a given file.
-     *
-     * @param writer
-     * @param line
-     */
-    public static void printToFile(PrintWriter writer, String line) {
-        writer.println(line);
-    }
-
 
 
     /**

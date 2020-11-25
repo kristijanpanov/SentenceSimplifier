@@ -10,6 +10,7 @@ import org.aksw.gerbil.io.nif.impl.TurtleNIFParser;
 import org.aksw.gerbil.transfer.nif.Document;
 import org.aksw.gerbil.transfer.nif.Marking;
 import org.aksw.gerbil.transfer.nif.data.NamedEntity;
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -41,13 +42,40 @@ public class FoxBinding {
      * @return FoxResponse - fox response as Classes.
      */
     public static FoxResponse sendRequest(String input) throws MalformedURLException {
-
         LOG.info("Sending request to FOX: [" + input + "] ...");
         final IFoxApi fox = new FoxApi()//
                 .setApiURL(new URL("https://fox.demos.dice-research.org/fox")) //probiere das mal.
                 .setTask(FoxParameter.TASK.RE)
                 .setOutputFormat(FoxParameter.OUTPUT.TURTLE)
                 .setLang(FoxParameter.LANG.EN)
+                .setInput(input)//
+                // .setLightVersion(FoxParameter.FOXLIGHT.ENBalie)//
+                .send();
+
+        //final String plainContent = fox.responseAsFile();
+        //List<Document> docs = parseResponseContentNif(plainContent);
+        //NifReader.printNifDocuments(docs);
+
+        final FoxResponse response = fox.responseAsClasses();
+        LOG.info("Response received: " + response);
+
+        return response;
+    }
+
+    /**
+     * Connects to the server and sends request input sentence to be processed.
+     *
+     * @param input - the sentence to extract the entities and relations from.
+     * @return FoxResponse - fox response as Classes.
+     */
+    public static FoxResponse sendStanfordRequest(String input) throws MalformedURLException {
+        LOG.info("Sending request to Stanford (via FOX): [" + input + "] ...");
+        final IFoxApi fox = new FoxApi()//
+                .setApiURL(new URL("https://fox.demos.dice-research.org/fox"))
+                .setTask(FoxParameter.TASK.RE)
+                .setOutputFormat(FoxParameter.OUTPUT.TURTLE)
+                .setLang(FoxParameter.LANG.EN)
+                .setLightVersion(FoxParameter.FOXLIGHT.ENStanford)
                 .setInput(input)//
                 // .setLightVersion(FoxParameter.FOXLIGHT.ENBalie)//
                 .send();

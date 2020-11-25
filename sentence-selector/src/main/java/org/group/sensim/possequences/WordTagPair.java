@@ -1,6 +1,8 @@
 package org.group.sensim.possequences;
 
-
+/**
+ * This class serves to create a structure for a Word with its POS-tag.
+ */
 public class WordTagPair {
     private String word;
     private String posTag;
