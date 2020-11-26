@@ -8,7 +8,7 @@ This is a BachelorThesis project. It consists  reimplementation of the approach 
 Java 13, Maven 4
 
 # Main simplification methods:
-1. App.simplifyDocument(); //simplifies the text, mainly by splitting sentences. HS-extended in Bachelorthesis := HS-approach + 2-3 new rules.
+1. App.simplifyDocument(); //simplifies the text, mainly by splitting sentences. HS-extended in Bachelorthesis := HS-original + 2-3 new features.
 
 2. POSMarker.checkRelevance(); //true, if entities present in a text. 
 
