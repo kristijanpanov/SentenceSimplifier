@@ -8,5 +8,6 @@ This is a BachelorThesis project. It consists  reimplementation of the approach 
 Java 13, Maven 4
 
 # Main simplification methods:
-App.simplifyDocument();
-App.simplifyDocumentIfEntityPresent();
+App.simplifyDocument(); //simplifies the text, mainly by splitting sentences. HS-extended in Bachelorthesis := HS-approach + 2-3 new rules.
+
+App.simplifyDocumentIfEntityPresent(); //have to be tested
