@@ -10,6 +10,8 @@ Java 13, Maven 4
 # Main simplification methods:
 1. App.simplifyDocument(); //simplifies the text, mainly by splitting sentences. HS-extended in Bachelorthesis := HS-original + 2-3 new features.
 
-2. POSMarker.checkRelevance(); //true, if entities present in a text. 
+2. SentenceSimplifier.main(); // main SS class from HS-original algorithm
 
-3. App.simplifyDocumentIfEntityPresent(); // 2. + 1.
+3. POSMarker.checkRelevance(); //true, if entities present in a text. 
+
+4. App.simplifyDocumentIfEntityPresent(); // 2. + 1.
