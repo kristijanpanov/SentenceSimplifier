@@ -4,6 +4,9 @@ This sentence simplifier is used to evaluate knowledge extraction frameworks, li
 
 This is a BachelorThesis project. It consists  reimplementation of the approach from Heilman and Smith (http://www.cs.cmu.edu/~./mheilman/papers/heilman-smith-qg-extr-facts.pdf) and applying some modifications, as extracting ADJPs, spliting 'not-only-but-also' structures and improved punctuation of short-names (U. K. --> U.K.).
 
+![flow-of-simplif](https://user-images.githubusercontent.com/44163172/100740195-98890080-33d8-11eb-94fb-8eb9d30b1847.png)
+
+
 # Requirements
 Java 13, Maven 4
 
